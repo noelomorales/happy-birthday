@@ -34,6 +34,7 @@ const SELF_DESTRUCT_WARNING = 5000;
 const POST_EXPLOSION_TRANSMISSION_DELAY = 3200;
 const DEFAULT_TYPE_SPEED = 14;
 const DEFAULT_FOCUS_HOLD = 650;
+const ADDRESS_COPY_TEXT = "3141 Mission St.\nBox 113\nSan Francisco, CA 94110";
 
 document.documentElement.style.setProperty(
   "--fuse-duration",
@@ -362,6 +363,44 @@ document.addEventListener("DOMContentLoaded", () => {
   const decryptionMessage = document.getElementById("decryption-message");
   const hasDecryptionSequence =
     typeof startDecryptionSequence === "function";
+  const copyAddressButton = document.getElementById("copy-address");
+  const previewOverlay = document.getElementById("image-preview");
+  const previewFrame = previewOverlay
+    ? previewOverlay.querySelector(".preview-frame")
+    : null;
+  const previewImage = previewOverlay ? previewOverlay.querySelector("img") : null;
+  const previewCaption = previewOverlay
+    ? previewOverlay.querySelector(".preview-caption")
+    : null;
+
+  if (previewFrame && !previewFrame.hasAttribute("tabindex")) {
+    previewFrame.setAttribute("tabindex", "-1");
+  }
+
+  const previewManager = initializeImagePreview({
+    overlay: previewOverlay,
+    frame: previewFrame,
+    image: previewImage,
+    caption: previewCaption,
+    body,
+  });
+
+  const previewTargets = Array.from(document.querySelectorAll("main img"));
+  previewTargets.forEach((img) => {
+    if (img.closest("#image-preview")) {
+      return;
+    }
+    previewManager.register(img);
+  });
+
+  if (copyAddressButton) {
+    copyAddressButton.dataset.defaultLabel = copyAddressButton.textContent
+      .trim()
+      .replace(/\s+/g, " ");
+    copyAddressButton.addEventListener("click", () => {
+      handleCopyAddress(copyAddressButton, ADDRESS_COPY_TEXT);
+    });
+  }
 
   assignRandomDossierImages();
 
@@ -538,6 +577,247 @@ document.addEventListener("DOMContentLoaded", () => {
     togglePause(pauseButton, body);
   });
 });
+
+function initializeImagePreview(elements = {}) {
+  const overlay = elements.overlay;
+  const imageEl = elements.image;
+  const captionEl = elements.caption;
+  const frame = elements.frame || null;
+  const body = elements.body || document.body;
+
+  if (!overlay || !imageEl || !captionEl) {
+    return {
+      register(target) {
+        if (target) {
+          target.dataset.previewEnabled = "false";
+        }
+      },
+    };
+  }
+
+  let active = false;
+  let previousFocus = null;
+  let keydownBound = false;
+
+  const closePreview = () => {
+    if (!active) {
+      return;
+    }
+
+    overlay.classList.remove("active");
+    overlay.setAttribute("aria-hidden", "true");
+    imageEl.removeAttribute("src");
+    imageEl.removeAttribute("alt");
+    captionEl.textContent = "";
+    captionEl.removeAttribute("hidden");
+    body.classList.remove("preview-open");
+
+    if (previousFocus && typeof previousFocus.focus === "function") {
+      previousFocus.focus({ preventScroll: true });
+    }
+
+    previousFocus = null;
+    active = false;
+
+    if (keydownBound) {
+      document.removeEventListener("keydown", handleKeydown);
+      keydownBound = false;
+    }
+  };
+
+  const handleKeydown = (event) => {
+    if (event.key === "Escape") {
+      closePreview();
+    }
+  };
+
+  const openPreview = (target) => {
+    if (!target) {
+      return;
+    }
+
+    const source = target.currentSrc || target.src || target.dataset.src;
+    if (!source) {
+      return;
+    }
+
+    const label = resolveImagePreviewCaption(target);
+    imageEl.src = source;
+    const altText = target.getAttribute("alt") || label || "Image preview";
+    imageEl.alt = altText;
+    captionEl.textContent = label;
+    if (label) {
+      captionEl.removeAttribute("hidden");
+    } else {
+      captionEl.setAttribute("hidden", "true");
+    }
+
+    previousFocus =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    overlay.classList.add("active");
+    overlay.setAttribute("aria-hidden", "false");
+    body.classList.add("preview-open");
+
+    if (frame && typeof frame.focus === "function") {
+      frame.focus({ preventScroll: true });
+    }
+
+    if (!keydownBound) {
+      document.addEventListener("keydown", handleKeydown);
+      keydownBound = true;
+    }
+
+    active = true;
+  };
+
+  overlay.addEventListener("click", (event) => {
+    if (
+      event.target === overlay ||
+      (event.target && event.target.hasAttribute("data-preview-close"))
+    ) {
+      closePreview();
+    }
+  });
+
+  return {
+    register(target) {
+      if (!target || target.dataset.previewEnabled === "true") {
+        return;
+      }
+
+      target.dataset.previewEnabled = "true";
+      if (!target.hasAttribute("tabindex")) {
+        target.setAttribute("tabindex", "0");
+      }
+      if (!target.hasAttribute("role")) {
+        target.setAttribute("role", "button");
+      }
+      target.setAttribute("aria-haspopup", "dialog");
+
+      target.addEventListener("click", (event) => {
+        event.preventDefault();
+        openPreview(target);
+      });
+
+      target.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          openPreview(target);
+        }
+      });
+    },
+    close: closePreview,
+  };
+}
+
+async function handleCopyAddress(button, text) {
+  if (!button || !text) {
+    return;
+  }
+
+  const defaultLabel = button.dataset.defaultLabel || button.textContent.trim();
+  button.disabled = true;
+
+  try {
+    const success = await copyTextToClipboard(text);
+    if (success) {
+      button.classList.remove("copy-error");
+      button.classList.add("copied");
+      button.textContent = "Copied!";
+    } else {
+      button.classList.remove("copied");
+      button.classList.add("copy-error");
+      button.textContent = "Copy Unavailable";
+    }
+  } catch (error) {
+    console.error("Unable to copy address", error);
+    button.classList.remove("copied");
+    button.classList.add("copy-error");
+    button.textContent = "Copy Failed";
+  }
+
+  setTimeout(() => {
+    button.classList.remove("copied", "copy-error");
+    button.textContent = defaultLabel;
+    button.disabled = false;
+  }, 2200);
+}
+
+async function copyTextToClipboard(text) {
+  if (!text) {
+    return false;
+  }
+
+  try {
+    if (
+      typeof navigator !== "undefined" &&
+      navigator.clipboard &&
+      typeof navigator.clipboard.writeText === "function"
+    ) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch (error) {
+    console.warn("Clipboard API unavailable", error);
+  }
+
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.setAttribute("readonly", "true");
+  textarea.style.position = "fixed";
+  textarea.style.opacity = "0";
+  textarea.style.pointerEvents = "none";
+  document.body.appendChild(textarea);
+  textarea.focus();
+  textarea.select();
+
+  let success = false;
+  try {
+    success = document.execCommand("copy");
+  } catch (error) {
+    console.error("Fallback clipboard copy failed", error);
+    success = false;
+  }
+
+  document.body.removeChild(textarea);
+  return success;
+}
+
+function resolveImagePreviewCaption(image) {
+  if (!image) {
+    return "";
+  }
+
+  const figure = image.closest("figure");
+  if (figure) {
+    const datasetLabel = figure.dataset.label;
+    if (datasetLabel) {
+      return datasetLabel;
+    }
+
+    const ariaLabel = figure.getAttribute("aria-label");
+    if (ariaLabel) {
+      return ariaLabel.trim();
+    }
+
+    const figcaption = figure.querySelector("figcaption");
+    if (figcaption && figcaption.textContent) {
+      return figcaption.textContent.trim();
+    }
+  }
+
+  const altText = image.getAttribute("alt");
+  if (altText) {
+    return altText.trim();
+  }
+
+  const ariaLabel = image.getAttribute("aria-label");
+  if (ariaLabel) {
+    return ariaLabel.trim();
+  }
+
+  return "Image Preview";
+}
 
 function createScheduler(options = {}) {
   const setTimer =

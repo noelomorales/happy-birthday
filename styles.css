@@ -525,6 +525,54 @@ body.show-dossier main#dossier {
   margin: 0;
 }
 
+.address-actions {
+  margin: clamp(1rem, 3vw, 1.5rem) 0 clamp(1.2rem, 3vw, 1.8rem);
+}
+
+.copy-address-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  width: min(320px, 100%);
+  padding: clamp(0.85rem, 2.2vw, 1.2rem) clamp(1.4rem, 3vw, 2rem);
+  font-size: clamp(0.95rem, 1.8vw, 1.1rem);
+  letter-spacing: 0.16rem;
+  text-transform: uppercase;
+  border: 2px solid rgba(198, 160, 69, 0.45);
+  background: linear-gradient(135deg, rgba(198, 160, 69, 0.2), rgba(198, 160, 69, 0.05));
+  color: rgba(239, 224, 195, 0.92);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease,
+    border-color 0.18s ease, background 0.18s ease;
+}
+
+.copy-address-button:hover,
+.copy-address-button:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.4);
+  border-color: rgba(198, 160, 69, 0.75);
+  background: linear-gradient(135deg, rgba(198, 160, 69, 0.28), rgba(198, 160, 69, 0.12));
+}
+
+.copy-address-button:active {
+  transform: translateY(0);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.35);
+}
+
+.copy-address-button.copied {
+  border-color: rgba(108, 185, 154, 0.8);
+  background: linear-gradient(135deg, rgba(108, 185, 154, 0.3), rgba(75, 139, 115, 0.22));
+  color: rgba(230, 245, 236, 0.95);
+}
+
+.copy-address-button.copy-error {
+  border-color: rgba(198, 92, 92, 0.85);
+  background: linear-gradient(135deg, rgba(198, 92, 92, 0.32), rgba(108, 35, 35, 0.24));
+  color: rgba(255, 228, 228, 0.95);
+}
+
 .map-card {
   display: flex;
   flex-direction: column;
@@ -1181,6 +1229,87 @@ body.show-dossier #fuse {
   inset: 0;
   background: radial-gradient(circle at center, rgba(198, 160, 69, 0.18), rgba(0, 0, 0, 0));
   animation: target-pulse 1.4s ease-in-out infinite;
+}
+
+#image-preview {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(6, 8, 12, 0.78);
+  backdrop-filter: blur(6px);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.25s ease, visibility 0.25s ease;
+  z-index: 140;
+}
+
+#image-preview.active {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+#image-preview .preview-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+#image-preview .preview-frame {
+  position: relative;
+  margin: 0;
+  max-width: min(86vw, 900px);
+  max-height: min(88vh, 680px);
+  border: 2px solid rgba(198, 160, 69, 0.55);
+  background: linear-gradient(145deg, rgba(10, 14, 19, 0.92), rgba(16, 20, 24, 0.88));
+  box-shadow: 0 26px 60px rgba(0, 0, 0, 0.65);
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  gap: 0;
+  animation: preview-pop 0.24s ease;
+  z-index: 1;
+}
+
+#image-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+#image-preview .preview-caption {
+  margin: 0;
+  padding: clamp(0.9rem, 2.4vw, 1.2rem) clamp(1.2rem, 3vw, 1.8rem);
+  font-size: clamp(0.9rem, 1.6vw, 1.05rem);
+  letter-spacing: 0.08rem;
+  text-transform: uppercase;
+  color: rgba(239, 224, 195, 0.82);
+  background: rgba(6, 9, 12, 0.72);
+  border-top: 1px solid rgba(198, 160, 69, 0.28);
+}
+
+@keyframes preview-pop {
+  from {
+    transform: scale(0.94);
+    opacity: 0.6;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+img[data-preview-enabled] {
+  cursor: zoom-in;
+}
+
+body.preview-open {
+  overflow: hidden;
 }
 
 #explosion {

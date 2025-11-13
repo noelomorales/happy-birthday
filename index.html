@@ -231,6 +231,11 @@
             A secured location that signs for packages every day. The location
             is:<br />3141 Mission St.<br />Box 113<br />San Francisco, CA 94110
           </p>
+          <div class="address-actions">
+            <button id="copy-address" type="button" class="copy-address-button">
+              Copy Address
+            </button>
+          </div>
           <div class="map-frame">
             <div class="map-overlay" aria-hidden="true">
               <div class="overlay-grid"></div>
@@ -289,6 +294,14 @@
         <div class="fuse-progress"></div>
         <div class="spark"></div>
       </div>
+    </div>
+
+    <div id="image-preview" aria-hidden="true">
+      <div class="preview-backdrop" data-preview-close></div>
+      <figure class="preview-frame" role="dialog" aria-modal="true">
+        <img src="" alt="" />
+        <figcaption class="preview-caption"></figcaption>
+      </figure>
     </div>
 
     <script src="script.js"></script>
