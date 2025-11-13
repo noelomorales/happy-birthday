@@ -1,11 +1,9 @@
-const INTRO_CONFIRM_TIME = 4000;
-const INTRO_COMPLETE_TIME = 6200;
+const INTRO_CONFIRM_TIME = 3400;
+const INTRO_COMPLETE_TIME = 5600;
 const FUSE_DURATION = 25000;
-const SELF_DESTRUCT_WARNING = 5000;
-const DEFAULT_TYPE_SPEED = 32;
-const DEFAULT_FOCUS_HOLD = 1200;
-const IMAGE_MANIFEST_URL = "assets/images/manifest.json";
-const IMAGE_QUEUE_STORAGE_KEY = "hb:image-rotation";
+const SELF_DESTRUCT_WARNING = 45000;
+const DEFAULT_TYPE_SPEED = 20;
+const DEFAULT_FOCUS_HOLD = 900;
 
 document.documentElement.style.setProperty(
   "--fuse-duration",
@@ -388,7 +386,7 @@ function createScheduler(options = {}) {
 function prepareStreamItems(items, messageBody, messageContainer) {
   items.forEach((item) => {
     const type = item.dataset.streamType || "text";
-    item.classList.remove("active", "typing");
+    item.classList.remove("active", "typing", "pinned");
     item.classList.remove("module-online");
 
     if (type === "text") {
@@ -411,67 +409,97 @@ async function runStreamSequence(
   focusStage,
   focusContent
 ) {
-  for (const item of items) {
-    await waitIfPaused();
-    const type = item.dataset.streamType || "text";
-    const focusMode = item.dataset.focusMode || "";
-    const focusLabel = resolveFocusLabel(item);
-    const focusHold = Number(item.dataset.focusHold || 0);
+  if (!items.length) {
+    await showTransmission(liveMessage, messageBody);
+    return;
+  }
 
-    if (type === "text") {
-      const speed = Number(item.dataset.streamSpeed) || DEFAULT_TYPE_SPEED;
-      const textContent = item.dataset.streamText || "";
+  const [primary, ...rest] = items;
+  await waitIfPaused();
 
-      if (focusMode) {
-        await engageFocus(item, focusStage, focusContent, {
-          type,
-          mode: focusMode,
-          label: focusLabel,
-          speed: Number(item.dataset.focusSpeed) || speed,
-          text: textContent,
-          hold: focusHold || DEFAULT_FOCUS_HOLD,
-        });
-      }
+  const type = primary.dataset.streamType || "text";
+  const focusMode = primary.dataset.focusMode || "";
+  const focusLabel = resolveFocusLabel(primary);
+  const focusHold = Number(primary.dataset.focusHold || 0);
 
-      await typeText(item, textContent, speed);
-      await controlledDelay(160);
-      continue;
+  let cascadePromise = Promise.resolve();
+
+  if (type === "text") {
+    const baseSpeed = Number(primary.dataset.streamSpeed) || DEFAULT_TYPE_SPEED;
+    const textContent = primary.dataset.streamText || "";
+    const focusSpeed = Number(primary.dataset.focusSpeed || 0);
+
+    if (focusMode) {
+      await engageFocus(primary, focusStage, focusContent, {
+        type,
+        mode: focusMode,
+        label: focusLabel,
+        speed: focusSpeed || accelerateSpeed(baseSpeed, 0.72),
+        text: textContent,
+        hold: focusHold || DEFAULT_FOCUS_HOLD,
+        image: primary.dataset.focusImage,
+      });
     }
 
-    if (type === "media") {
-      if (focusMode) {
-        await engageFocus(item, focusStage, focusContent, {
-          type,
-          mode: focusMode,
-          label: focusLabel,
-          hold: focusHold || 1100,
-        });
-      }
+    const typingPromise = typeText(
+      primary,
+      textContent,
+      accelerateSpeed(baseSpeed, 0.78)
+    );
+    primary.classList.add("pinned");
 
-      item.classList.add("active");
-      await controlledDelay(320);
-      continue;
+    if (rest.length) {
+      cascadePromise = startCascade(rest, focusStage, focusContent, {
+        initialDelay: 850,
+      });
     }
 
-    await engageFocus(item, focusStage, focusContent, {
+    await Promise.all([typingPromise, cascadePromise]);
+    await controlledDelay(160);
+  } else if (type === "media") {
+    if (focusMode) {
+      await engageFocus(primary, focusStage, focusContent, {
+        type,
+        mode: focusMode,
+        label: focusLabel,
+        hold: focusHold || 800,
+      });
+    }
+
+    primary.classList.add("active");
+
+    if (rest.length) {
+      cascadePromise = startCascade(rest, focusStage, focusContent, {
+        initialDelay: 420,
+      });
+      await cascadePromise;
+    }
+  } else {
+    await engageFocus(primary, focusStage, focusContent, {
       type: "module",
       mode: focusMode || "module",
       label: focusLabel,
-      hold: focusHold || 1500,
+      hold: focusHold || 900,
     });
 
-    item.classList.add("active");
-    await controlledDelay(520);
+    primary.classList.add("active");
+
+    if (rest.length) {
+      cascadePromise = startCascade(rest, focusStage, focusContent, {
+        initialDelay: 520,
+      });
+      await cascadePromise;
+    }
   }
 
-  await controlledDelay(420);
+  await controlledDelay(260);
   await showTransmission(liveMessage, messageBody);
 }
 
 async function showTransmission(container, messageBody) {
   container.classList.add("visible");
   await controlledDelay(220);
-  await typeText(messageBody, messageBody.dataset.streamText || "", 28);
+  await typeText(messageBody, messageBody.dataset.streamText || "", 20);
 }
 
 function resolveFocusLabel(item) {
@@ -492,6 +520,88 @@ function resolveFocusLabel(item) {
   return "Incoming Feed";
 }
 
+function accelerateSpeed(base, factor = 0.65) {
+  const source = Number(base) || DEFAULT_TYPE_SPEED;
+  const value = Math.floor(source * factor);
+  return Math.max(8, value);
+}
+
+async function startCascade(
+  items,
+  focusStage,
+  focusContent,
+  options = {}
+) {
+  if (!items.length) {
+    return;
+  }
+
+  const initialDelay = options.initialDelay ?? 600;
+  const betweenDelay = options.betweenDelay ?? 620;
+  const speedFactor = options.speedFactor ?? 0.68;
+
+  await controlledDelay(initialDelay);
+
+  for (const item of items) {
+    await waitIfPaused();
+    const type = item.dataset.streamType || "text";
+    const focusMode = item.dataset.focusMode || "";
+    const focusLabel = resolveFocusLabel(item);
+    const focusHold = Number(item.dataset.focusHold || 0);
+
+    if (type === "text") {
+      const baseSpeed = Number(item.dataset.streamSpeed) || DEFAULT_TYPE_SPEED;
+      const textContent = item.dataset.streamText || "";
+      const focusSpeed = Number(item.dataset.focusSpeed || 0);
+
+      if (focusMode) {
+        await engageFocus(item, focusStage, focusContent, {
+          type,
+          mode: focusMode,
+          label: focusLabel,
+          speed: focusSpeed || accelerateSpeed(baseSpeed, speedFactor * 0.92),
+          text: textContent,
+          hold: focusHold || DEFAULT_FOCUS_HOLD,
+          image: item.dataset.focusImage,
+        });
+      }
+
+      await typeText(item, textContent, accelerateSpeed(baseSpeed, speedFactor));
+      item.classList.add("pinned");
+      await controlledDelay(180);
+      await controlledDelay(betweenDelay);
+      continue;
+    }
+
+    if (type === "media") {
+      if (focusMode) {
+        await engageFocus(item, focusStage, focusContent, {
+          type,
+          mode: focusMode,
+          label: focusLabel,
+          hold: focusHold || 680,
+        });
+      }
+
+      item.classList.add("active");
+      await controlledDelay(200);
+      await controlledDelay(betweenDelay);
+      continue;
+    }
+
+    await engageFocus(item, focusStage, focusContent, {
+      type: "module",
+      mode: focusMode || "module",
+      label: focusLabel,
+      hold: focusHold || 820,
+    });
+
+    item.classList.add("active");
+    await controlledDelay(260);
+    await controlledDelay(betweenDelay);
+  }
+}
+
 async function engageFocus(item, stage, content, config) {
   if (!stage || !content) {
     return;
@@ -505,6 +615,7 @@ async function engageFocus(item, stage, content, config) {
     mode,
     label,
     type: config.type,
+    image: config.image,
   });
   const holdDuration = config.hold || DEFAULT_FOCUS_HOLD;
   const typeSpeed = config.speed || DEFAULT_TYPE_SPEED;
@@ -517,18 +628,18 @@ async function engageFocus(item, stage, content, config) {
   content.innerHTML = "";
   content.appendChild(container);
 
-  await controlledDelay(60);
+  await controlledDelay(45);
   stage.classList.add("engaged");
 
   if (config.type === "text") {
     await typeText(target, config.text || "", typeSpeed);
-    await controlledDelay(240);
+    await controlledDelay(170);
   } else {
     await controlledDelay(holdDuration);
   }
 
   stage.classList.add("retreating");
-  await controlledDelay(360);
+  await controlledDelay(240);
 
   stage.classList.remove("visible", "engaged", "retreating");
   stage.removeAttribute("data-mode");
@@ -542,6 +653,9 @@ function createFocusClone(item, config) {
   const body = document.createElement("div");
 
   wrapper.classList.add("focus-item", `focus-${config.mode}`);
+  if (config.type) {
+    wrapper.classList.add(`focus-${config.type}`);
+  }
   labelEl.classList.add("focus-label");
   labelEl.textContent = config.label;
   body.classList.add("focus-body");
@@ -550,6 +664,24 @@ function createFocusClone(item, config) {
   wrapper.appendChild(body);
 
   if (config.type === "text") {
+    if (config.image) {
+      wrapper.classList.add("has-image");
+      const figure = document.createElement("figure");
+      figure.classList.add("focus-photo");
+      const image = document.createElement("img");
+      image.src = config.image;
+      image.alt = `${config.label} visual reference`;
+      image.loading = "lazy";
+      figure.appendChild(image);
+
+      const textual = document.createElement("div");
+      textual.classList.add("focus-textual");
+
+      body.appendChild(figure);
+      body.appendChild(textual);
+      return { container: wrapper, target: textual };
+    }
+
     return { container: wrapper, target: body };
   }
 
@@ -598,6 +730,8 @@ async function typeText(element, text, speed) {
 
   let currentNode = document.createTextNode("");
   element.appendChild(currentNode);
+  const step = Math.max(6, Number(speed) || DEFAULT_TYPE_SPEED);
+  const newlineDelay = Math.max(8, Math.floor(step * 1.12));
 
   for (const char of text) {
     await waitIfPaused();
@@ -606,12 +740,12 @@ async function typeText(element, text, speed) {
       currentNode = document.createTextNode("");
       element.appendChild(document.createElement("br"));
       element.appendChild(currentNode);
-      await controlledDelay(speed * 1.5);
+      await controlledDelay(newlineDelay);
       continue;
     }
 
     currentNode.data += char;
-    await controlledDelay(speed);
+    await controlledDelay(step);
   }
 
   element.classList.remove("typing");
