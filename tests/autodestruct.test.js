@@ -7,7 +7,7 @@ const renderDom = () => {
     </div>
     <div id="self-destruct">
       <div class="self-destruct-panel">
-        <span class="self-destruct-countdown">45</span>
+        <span class="self-destruct-countdown">5</span>
       </div>
     </div>
     <main id="dossier"></main>
@@ -88,7 +88,7 @@ describe("Autodestruct timeline", () => {
     advance(constants.INTRO_COMPLETE_TIME + constants.FUSE_DURATION);
 
     expect(overlay.classList.contains("visible")).toBe(true);
-    expect(countdown.textContent).toBe("45");
+    expect(countdown.textContent).toBe("5");
 
     advance(constants.SELF_DESTRUCT_WARNING);
 

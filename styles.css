@@ -6,9 +6,9 @@
   --text-muted: rgba(241, 244, 255, 0.7);
   --intro-duration: 6.2s;
   --biometric-rotation: 6.5s;
-  --biometric-scan-speed: 2.4s;
+  --biometric-scan-speed: 3s;
   --biometric-glow: 1.3s;
-  --fuse-duration: 25000ms;
+  --fuse-duration: 45000ms;
   --flame-color: rgba(255, 145, 0, 0.9);
   --flame-color-secondary: rgba(255, 80, 0, 0.85);
   --flame-color-tertiary: rgba(255, 220, 0, 0.8);
@@ -137,11 +137,37 @@ body.paused * {
   position: absolute;
   inset: 18%;
   border-radius: 50%;
-  background-image: radial-gradient(rgba(0, 240, 255, 0.08) 1px, transparent 1px),
-    radial-gradient(rgba(255, 0, 76, 0.12) 1px, transparent 1px);
+  background-image: radial-gradient(rgba(0, 240, 255, 0.1) 1px, transparent 1px),
+    radial-gradient(rgba(255, 0, 76, 0.1) 1px, transparent 1px);
   background-size: 20px 20px;
-  opacity: 0.6;
+  opacity: 0.45;
   animation: mesh-flare 4.8s ease-in-out infinite;
+}
+
+.retina-marker-ring {
+  position: absolute;
+  inset: 18%;
+  border-radius: 50%;
+  border: 1px dashed rgba(0, 240, 255, 0.22);
+  box-shadow: 0 0 18px rgba(0, 240, 255, 0.25);
+  mask: radial-gradient(circle, transparent 68%, rgba(0, 0, 0, 0.95) 70%);
+  opacity: 0.6;
+}
+
+.retina-marker-ring::after {
+  content: "";
+  position: absolute;
+  inset: -22%;
+  border-radius: 50%;
+  background: conic-gradient(
+      from 0deg,
+      rgba(0, 240, 255, 0) 0deg,
+      rgba(0, 240, 255, 0.28) 6deg,
+      rgba(0, 240, 255, 0) 14deg
+    )
+    50% 50% / 12px 12px repeat;
+  opacity: 0.28;
+  filter: blur(0.4px);
 }
 
 .scan-orb {
@@ -154,20 +180,102 @@ body.paused * {
   animation: orb-pulse 2.1s ease-in-out infinite;
 }
 
+.scan-lines {
+  position: absolute;
+  inset: 12% 22%;
+  display: grid;
+  grid-template-rows: repeat(6, 1fr);
+  gap: 0.6rem;
+  pointer-events: none;
+}
+
+.scan-lines span {
+  position: relative;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 0, 76, 0),
+    rgba(255, 0, 76, 0.45),
+    rgba(0, 240, 255, 0)
+  );
+  opacity: 0;
+  transform: scaleX(0.6);
+  animation: scan-line-pass calc(var(--biometric-scan-speed) * 1.2) linear
+    infinite;
+}
+
+.scan-lines span:nth-child(odd) {
+  animation-delay: 0.18s;
+}
+
+.scan-lines span:nth-child(2n) {
+  animation-delay: 0.36s;
+}
+
+.scan-lines span:nth-child(3n) {
+  animation-delay: 0.54s;
+}
+
+.scan-lines span:nth-child(4n) {
+  animation-delay: 0.72s;
+}
+
+.scan-lines span:nth-child(5n) {
+  animation-delay: 0.9s;
+}
+
+.scan-lines span:nth-child(6n) {
+  animation-delay: 1.08s;
+}
+
+.scan-beam {
+  position: absolute;
+  inset: -35% 42%;
+  border-radius: 999px;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 0, 76, 0) 0%,
+    rgba(255, 0, 76, 0.7) 45%,
+    rgba(255, 0, 76, 0.85) 52%,
+    rgba(255, 0, 76, 0) 100%
+  );
+  filter: blur(1.2px);
+  mix-blend-mode: screen;
+  animation: scan-vertical var(--biometric-scan-speed) ease-in-out infinite
+    alternate;
+  opacity: 0.85;
+  box-shadow: 0 0 24px rgba(255, 0, 76, 0.55), 0 0 48px rgba(255, 0, 76, 0.3);
+}
+
+.scan-beam::before,
+.scan-beam::after {
+  content: "";
+  position: absolute;
+  inset: 18% 22%;
+  border-radius: inherit;
+  border: 1px solid rgba(255, 0, 76, 0.6);
+  opacity: 0.4;
+}
+
+.scan-beam::after {
+  inset: 32% 10%;
+  border-color: rgba(0, 240, 255, 0.5);
+}
+
 .scan-sweep {
   position: absolute;
-  inset: 0;
-  background: conic-gradient(
-    from 0deg,
-    rgba(0, 240, 255, 0) 0deg,
-    rgba(0, 240, 255, 0.18) 40deg,
-    rgba(0, 240, 255, 0.55) 90deg,
-    rgba(255, 0, 76, 0.22) 140deg,
-    rgba(255, 0, 76, 0) 200deg
+  inset: 8%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at center,
+    rgba(0, 240, 255, 0.2),
+    rgba(0, 240, 255, 0.05) 55%,
+    transparent 70%
   );
   mix-blend-mode: screen;
-  animation: sweep-rotate var(--biometric-scan-speed) linear infinite;
-  opacity: 0.7;
+  animation: sweep-rotate calc(var(--biometric-scan-speed) * 1.1) linear
+    infinite;
+  opacity: 0.55;
 }
 
 .signature-points {
@@ -175,17 +283,17 @@ body.paused * {
   inset: 22%;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 0.8rem;
+  gap: 0.6rem;
 }
 
 .signature-points span {
   width: 9px;
   height: 9px;
   border-radius: 50%;
-  background: rgba(0, 240, 255, 0.9);
-  box-shadow: 0 0 12px rgba(0, 240, 255, 0.8);
+  background: rgba(0, 240, 255, 0.45);
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.4);
   opacity: 0;
-  animation: point-sequence 2.6s ease-in-out infinite;
+  animation: point-sequence 2.8s ease-in-out infinite;
 }
 
 .signature-points span:nth-child(odd) {
@@ -194,6 +302,10 @@ body.paused * {
 
 .signature-points span:nth-child(3n) {
   animation-delay: 0.7s;
+}
+
+.signature-points span:nth-child(4n) {
+  animation-delay: 1.05s;
 }
 
 .intro-readout {
@@ -388,11 +500,12 @@ body.show-dossier main#dossier {
 }
 
 .stream-item[data-stream-type="media"] {
-  transform: scale(0.96);
+  transform: translateY(8px) scale(0.96);
+  transform-origin: center;
 }
 
 .stream-item[data-stream-type="media"].active {
-  transform: scale(1);
+  animation: media-spotlight 1.85s ease-in-out forwards;
 }
 
 .stream-item[data-stream-type="module"] {
@@ -672,6 +785,7 @@ body.show-dossier #fuse {
   width: 100%;
   background: linear-gradient(90deg, rgba(255, 80, 0, 0.95), rgba(255, 190, 40, 0.9));
   animation: fuse-burn var(--fuse-duration) linear forwards;
+  animation-play-state: paused;
 }
 
 .spark {
@@ -685,6 +799,12 @@ body.show-dossier #fuse {
   background: radial-gradient(circle at center, #fff6cc 10%, #ff9a00 40%, rgba(255, 0, 0, 0) 70%);
   box-shadow: 0 0 35px rgba(255, 180, 0, 0.8), 0 0 55px rgba(255, 60, 0, 0.6);
   animation: spark-move var(--fuse-duration) linear forwards;
+  animation-play-state: paused;
+}
+
+#fuse.ignited .fuse-progress,
+#fuse.ignited .spark {
+  animation-play-state: running;
 }
 
 .spark::after {
@@ -744,6 +864,7 @@ body.show-dossier #fuse {
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: clamp(1rem, 4vw, 3.5rem);
   z-index: 80;
   pointer-events: none;
   opacity: 0;
@@ -770,9 +891,9 @@ body.show-dossier #fuse {
 
 #focus-stage .focus-shell {
   position: relative;
-  min-width: min(640px, 90vw);
+  min-width: min(620px, 88vw);
   max-width: 90vw;
-  padding: clamp(2.5rem, 5vw, 4rem);
+  padding: clamp(2.4rem, 5vw, 4rem);
   border: 1px solid rgba(0, 240, 255, 0.3);
   background: linear-gradient(145deg, rgba(6, 12, 24, 0.9), rgba(14, 24, 42, 0.85));
   box-shadow: 0 30px 50px rgba(0, 0, 0, 0.55);
@@ -794,6 +915,36 @@ body.show-dossier #fuse {
 #focus-stage .focus-content {
   position: relative;
   z-index: 1;
+}
+
+#focus-stage[data-mode="media"] {
+  justify-content: flex-end;
+  padding-right: clamp(2.5rem, 8vw, 6.5rem);
+  padding-left: clamp(1rem, 5vw, 4rem);
+}
+
+#focus-stage[data-mode="media"] .focus-backdrop {
+  background: radial-gradient(
+    circle at center,
+    rgba(5, 10, 18, 0.92) 0%,
+    rgba(4, 8, 14, 0.72) 58%,
+    rgba(0, 0, 0, 0.38) 100%
+  );
+  backdrop-filter: blur(4px);
+}
+
+#focus-stage[data-mode="media"] .focus-shell {
+  max-width: min(480px, 46vw);
+  padding: clamp(1.8rem, 4vw, 3rem);
+  transform-origin: center right;
+}
+
+#focus-stage[data-mode="media"].engaged .focus-shell {
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.65);
+}
+
+#focus-stage[data-mode="media"] .focus-item.focus-media {
+  filter: drop-shadow(0 12px 30px rgba(0, 0, 0, 0.6));
 }
 
 .focus-item {
@@ -956,6 +1107,20 @@ body.explode #fuse,
 body.explode #self-destruct {
   opacity: 0;
   transition: opacity 0.4s ease;
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(8, 8, 10, 0.95), #000);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 85;
+}
+
+body.explode::after {
+  animation: blackout 1.4s ease forwards 1.15s;
 }
 
 .explosion-flash,
@@ -1503,6 +1668,40 @@ body.explode .smoke {
   }
 }
 
+@keyframes scan-line-pass {
+  0% {
+    opacity: 0;
+    transform: scaleX(0.4) translateX(-20%);
+  }
+  20% {
+    opacity: 0.85;
+    transform: scaleX(1) translateX(0);
+  }
+  80% {
+    opacity: 0.65;
+    transform: scaleX(1) translateX(0);
+  }
+  100% {
+    opacity: 0;
+    transform: scaleX(0.4) translateX(15%);
+  }
+}
+
+@keyframes scan-vertical {
+  0% {
+    transform: translate(-50%, -48%) scaleY(0.95);
+    opacity: 0.75;
+  }
+  45% {
+    opacity: 1;
+    transform: translate(-50%, 48%) scaleY(1.05);
+  }
+  100% {
+    opacity: 0.9;
+    transform: translate(-50%, -48%) scaleY(0.95);
+  }
+}
+
 @keyframes point-sequence {
   0%,
   20% {
@@ -1875,6 +2074,41 @@ body.explode .smoke {
   100% {
     opacity: 0;
     transform: rotate(var(--spark-rot, 0deg)) scaleY(1.4);
+  }
+}
+
+@keyframes media-spotlight {
+  0% {
+    opacity: 0;
+    transform: translate3d(-8vw, 32px, 0) scale(0.88);
+    filter: blur(12px);
+  }
+  18% {
+    opacity: 1;
+    transform: translate3d(-4vw, -2vh, 0) scale(1.18);
+    filter: blur(2px);
+  }
+  46% {
+    transform: translate3d(0, 0, 0) scale(1.05);
+    filter: blur(0px);
+  }
+  72% {
+    transform: translate3d(0, 0, 0) scale(1);
+    filter: blur(0px);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+    filter: blur(0px);
+  }
+}
+
+@keyframes blackout {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }
 
