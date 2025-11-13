@@ -35,6 +35,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const liveMessageBody = liveMessage.querySelector(".message-body");
   const focusStage = document.getElementById("focus-stage");
   const focusContent = focusStage.querySelector(".focus-content");
+  const resetButton = document.getElementById("reset-timeline");
+  const decryptionOverlay = document.getElementById("decryption-overlay");
+  const decryptionStatus = document.getElementById("decryption-status");
+  const decryptionLog = document.getElementById("decryption-log");
+  const decryptionMessage = document.getElementById("decryption-message");
+  const hasDecryptionSequence =
+    typeof startDecryptionSequence === "function";
 
   countdownState.display = countdownEl;
 
@@ -101,8 +108,13 @@ document.addEventListener("DOMContentLoaded", () => {
     decryptionOverlay &&
     decryptionStatus &&
     decryptionLog &&
-    decryptionMessage
+    decryptionMessage &&
+    hasDecryptionSequence
   ) {
+    const decryptDelay =
+      typeof EXPLOSION_TO_DECRYPT_DELAY === "number"
+        ? EXPLOSION_TO_DECRYPT_DELAY
+        : 1800;
     scheduler.schedule(
       "decrypt",
       () => {
@@ -114,7 +126,7 @@ document.addEventListener("DOMContentLoaded", () => {
           body,
         });
       },
-      FUSE_DURATION + SELF_DESTRUCT_WARNING + EXPLOSION_TO_DECRYPT_DELAY
+      FUSE_DURATION + SELF_DESTRUCT_WARNING + decryptDelay
     );
   }
 
