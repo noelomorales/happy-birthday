@@ -3,6 +3,8 @@ const INTRO_COMPLETE_TIME = 6200;
 const FUSE_DURATION = 25000;
 const SELF_DESTRUCT_WARNING = 5000;
 const DEFAULT_TYPE_SPEED = 32;
+const SELF_DESTRUCT_GRACE_PERIOD = 4000;
+const TRANSMISSION_TYPE_SPEED = 28;
 
 document.documentElement.style.setProperty(
   "--fuse-duration",
@@ -43,6 +45,46 @@ document.addEventListener("DOMContentLoaded", () => {
 
   prepareStreamItems(orderedStreamItems, liveMessageBody, liveMessage);
 
+  const estimatedStreamDuration = estimateStreamDuration(
+    orderedStreamItems,
+    liveMessageBody
+  );
+  const fuseDuration = Math.max(
+    Math.round(estimatedStreamDuration + SELF_DESTRUCT_GRACE_PERIOD),
+    FUSE_DURATION
+  );
+
+  document.documentElement.style.setProperty(
+    "--fuse-duration",
+    `${fuseDuration}ms`
+  );
+
+  let selfDestructScheduled = false;
+
+  const scheduleSelfDestructSequence = () => {
+    if (selfDestructScheduled) {
+      return;
+    }
+
+    selfDestructScheduled = true;
+
+    scheduler.schedule(
+      "countdown",
+      () => {
+        startCountdown(selfDestructOverlay);
+      },
+      SELF_DESTRUCT_GRACE_PERIOD
+    );
+
+    scheduler.schedule(
+      "explode",
+      () => {
+        body.classList.add("explode");
+      },
+      SELF_DESTRUCT_GRACE_PERIOD + SELF_DESTRUCT_WARNING
+    );
+  };
+
   scheduler.schedule("introConfirm", () => {
     intro.classList.add("confirmed");
     introText.textContent = "Identity Confirmed";
@@ -53,27 +95,13 @@ document.addEventListener("DOMContentLoaded", () => {
     () => {
       intro.classList.add("intro-complete");
       body.classList.add("show-dossier");
-      runStreamSequence(orderedStreamItems, liveMessage, liveMessageBody).catch(
-        console.error
-      );
+      runStreamSequence(orderedStreamItems, liveMessage, liveMessageBody)
+        .then(() => {
+          scheduleSelfDestructSequence();
+        })
+        .catch(console.error);
     },
     INTRO_COMPLETE_TIME
-  );
-
-  scheduler.schedule(
-    "countdown",
-    () => {
-      startCountdown(selfDestructOverlay);
-    },
-    FUSE_DURATION
-  );
-
-  scheduler.schedule(
-    "explode",
-    () => {
-      body.classList.add("explode");
-    },
-    FUSE_DURATION + SELF_DESTRUCT_WARNING
   );
 
   pauseButton.addEventListener("click", () => {
@@ -169,7 +197,50 @@ async function runStreamSequence(items, liveMessage, messageBody) {
 async function showTransmission(container, messageBody) {
   container.classList.add("visible");
   await controlledDelay(220);
-  await typeText(messageBody, messageBody.dataset.streamText || "", 28);
+  await typeText(
+    messageBody,
+    messageBody.dataset.streamText || "",
+    TRANSMISSION_TYPE_SPEED
+  );
+}
+
+function estimateStreamDuration(items, messageBody) {
+  let total = 0;
+
+  items.forEach((item) => {
+    const type = item.dataset.streamType || "text";
+
+    if (type === "text") {
+      const speed = Number(item.dataset.streamSpeed) || DEFAULT_TYPE_SPEED;
+      total += estimateTypingDuration(item.dataset.streamText || "", speed);
+      total += 140;
+    } else {
+      total += 260;
+    }
+  });
+
+  total += 420;
+  total += 220;
+  total += estimateTypingDuration(
+    messageBody.dataset.streamText || "",
+    TRANSMISSION_TYPE_SPEED
+  );
+
+  return total;
+}
+
+function estimateTypingDuration(text, speed) {
+  let duration = 0;
+
+  for (const char of text) {
+    if (char === "\n") {
+      duration += speed * 1.5;
+    } else {
+      duration += speed;
+    }
+  }
+
+  return duration;
 }
 
 function extractText(element) {
