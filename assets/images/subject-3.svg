@@ -1,12 +1,100 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="640" height="420" viewBox="0 0 640 420">
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="420" viewBox="0 0 640 420" role="img" aria-labelledby="title desc">
+  <title id="title">Mission evidence cache</title>
+  <desc id="desc">
+    Stylised mission evidence photograph showing a secure locker with wine bottles, dossiers, and a glowing locator tag.
+  </desc>
   <defs>
-    <linearGradient id="g3" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#1a0f1f" />
-      <stop offset="100%" stop-color="#40204a" />
+    <linearGradient id="wall" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#170b1d" />
+      <stop offset="100%" stop-color="#2a1136" />
     </linearGradient>
+    <linearGradient id="locker" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#281b36" />
+      <stop offset="1" stop-color="#13071c" />
+    </linearGradient>
+    <linearGradient id="shelf" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#31162f" />
+      <stop offset="1" stop-color="#461f4a" />
+    </linearGradient>
+    <linearGradient id="accentTag" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ff4f68" />
+      <stop offset="1" stop-color="#ffaa43" />
+    </linearGradient>
+    <linearGradient id="bottle" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#20152a" />
+      <stop offset="0.6" stop-color="#421f38" />
+      <stop offset="1" stop-color="#120711" />
+    </linearGradient>
+    <linearGradient id="bottle2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1a1f39" />
+      <stop offset="0.65" stop-color="#274c72" />
+      <stop offset="1" stop-color="#0b1424" />
+    </linearGradient>
+    <filter id="texture">
+      <feTurbulence type="fractalNoise" baseFrequency="0.6" numOctaves="2" seed="3" />
+      <feComponentTransfer>
+        <feFuncA type="linear" slope="0.18" />
+      </feComponentTransfer>
+      <feBlend in2="SourceGraphic" mode="overlay" />
+    </filter>
+    <filter id="glare">
+      <feGaussianBlur stdDeviation="12" />
+    </filter>
   </defs>
-  <rect width="640" height="420" fill="url(#g3)" />
-  <rect x="15" y="15" width="610" height="390" fill="none" stroke="#ffaa00" stroke-width="5" stroke-dasharray="18 16" opacity="0.65" />
-  <text x="50%" y="45%" font-size="38" font-family="'Share Tech Mono', monospace" fill="#ffaa00" text-anchor="middle">EVIDENCE GOES HERE</text>
-  <text x="50%" y="60%" font-size="22" font-family="'Share Tech Mono', monospace" fill="#ffffff" text-anchor="middle" opacity="0.7">Drop your own mission snapshot</text>
+  <rect width="640" height="420" fill="url(#wall)" />
+  <rect x="16" y="16" width="608" height="388" rx="12" fill="rgba(0,0,0,0.32)" stroke="#ff9c3f" stroke-width="3" stroke-dasharray="20 14" />
+  <g transform="translate(80 70)" filter="url(#texture)">
+    <rect width="480" height="280" rx="18" fill="url(#locker)" stroke="rgba(255,156,63,0.4)" stroke-width="2" />
+    <g transform="translate(28 36)">
+      <rect width="424" height="12" fill="url(#shelf)" />
+      <rect y="94" width="424" height="12" fill="url(#shelf)" />
+      <rect y="188" width="424" height="12" fill="url(#shelf)" />
+    </g>
+    <g transform="translate(70 50)">
+      <rect x="0" y="0" width="46" height="180" rx="18" fill="url(#bottle)" />
+      <rect x="110" y="-8" width="46" height="188" rx="18" fill="url(#bottle2)" />
+      <rect x="220" y="12" width="46" height="168" rx="18" fill="url(#bottle)" />
+      <rect x="330" y="-4" width="46" height="184" rx="18" fill="url(#bottle2)" />
+      <rect x="0" y="140" width="46" height="40" fill="#120712" opacity="0.6" />
+      <rect x="110" y="140" width="46" height="40" fill="#0b1424" opacity="0.55" />
+      <rect x="220" y="140" width="46" height="40" fill="#120712" opacity="0.6" />
+      <rect x="330" y="140" width="46" height="40" fill="#0b1424" opacity="0.55" />
+    </g>
+    <g transform="translate(40 210)">
+      <rect x="0" y="0" width="150" height="86" fill="#120915" stroke="rgba(255,156,63,0.45)" />
+      <rect x="14" y="16" width="60" height="10" fill="#ff9c3f" opacity="0.7" />
+      <rect x="14" y="36" width="88" height="10" fill="#33142a" />
+      <rect x="14" y="56" width="88" height="10" fill="#33142a" />
+    </g>
+    <g transform="translate(220 220)">
+      <rect x="0" y="0" width="170" height="76" fill="#130a1b" stroke="rgba(255,156,63,0.35)" />
+      <rect x="14" y="18" width="140" height="12" rx="6" fill="#231128" />
+      <rect x="14" y="42" width="120" height="12" rx="6" fill="#231128" />
+      <rect x="130" y="24" width="24" height="24" rx="8" fill="url(#accentTag)" />
+    </g>
+    <g transform="translate(410 214)">
+      <rect x="0" y="0" width="110" height="92" rx="6" fill="#1d1024" stroke="rgba(255,156,63,0.45)" />
+      <rect x="20" y="16" width="70" height="12" rx="6" fill="#2f1b3a" />
+      <rect x="20" y="36" width="70" height="12" rx="6" fill="#2f1b3a" />
+      <rect x="20" y="56" width="70" height="12" rx="6" fill="#2f1b3a" />
+      <circle cx="92" cy="74" r="6" fill="#ff9c3f" />
+    </g>
+    <g transform="translate(360 46)" opacity="0.7">
+      <rect x="0" y="0" width="120" height="72" rx="10" fill="#1f122e" stroke="rgba(255,156,63,0.35)" />
+      <path d="M20 52 L42 32 L58 40 L84 12" fill="none" stroke="#ff6f93" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+      <circle cx="84" cy="12" r="8" fill="#ff6f93" />
+      <circle cx="42" cy="32" r="6" fill="#1cffea" />
+      <circle cx="58" cy="40" r="6" fill="#1cffea" />
+      <circle cx="20" cy="52" r="6" fill="#1cffea" />
+    </g>
+    <g transform="translate(68 42)">
+      <rect x="0" y="0" width="100" height="46" rx="6" fill="rgba(255,79,104,0.18)" stroke="#ff9c3f" stroke-dasharray="6 4" />
+      <text x="50" y="30" font-family="'Share Tech Mono', monospace" font-size="18" fill="#ff9c3f" text-anchor="middle">REVANA</text>
+    </g>
+  </g>
+  <ellipse cx="520" cy="320" rx="120" ry="70" fill="#ff4f68" opacity="0.18" filter="url(#glare)" />
+  <g font-family="'Share Tech Mono', monospace" fill="#ff9c3f" opacity="0.8" font-size="16">
+    <text x="48" y="360">MISSION EVIDENCE C</text>
+    <text x="592" y="360" text-anchor="end">LOCKER SCAN • VERIFIED</text>
+  </g>
 </svg>
