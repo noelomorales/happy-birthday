@@ -344,6 +344,12 @@ body.show-dossier main#dossier {
   margin-bottom: clamp(2.5rem, 5vw, 3.25rem);
 }
 
+.overview-column:not(.dossier-media) {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1.2rem, 3vw, 1.8rem);
+}
+
 .overview-column p {
   line-height: 1.6;
   color: var(--text-muted);
@@ -361,6 +367,18 @@ body.show-dossier main#dossier {
   white-space: pre-line;
   overflow: hidden;
   transform-origin: top left;
+}
+
+.identity-greeting {
+  font-size: 1.05rem;
+  letter-spacing: 0.05rem;
+}
+
+.location-readout {
+  font-family: "IBM Plex Mono", "IBM Plex Sans", monospace;
+  font-size: 1.05rem;
+  letter-spacing: 0.08rem;
+  text-transform: uppercase;
 }
 
 .overview-report.pinned {
