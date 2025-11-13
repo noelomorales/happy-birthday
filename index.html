@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Top Secret Birthday Briefing</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Unbounded:wght@500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="background-layers" aria-hidden="true">
+      <div class="stars"></div>
+      <div class="grid"></div>
+      <div class="scanlines"></div>
+      <div class="corner-glow top-left"></div>
+      <div class="corner-glow bottom-right"></div>
+    </div>
+
+    <div id="intro" class="active">
+      <div class="intro-content">
+        <div class="scan-mask">
+          <div class="scan-line"></div>
+        </div>
+        <p class="intro-text" aria-live="polite">Initializing...</p>
+        <p class="intro-subtext">Secure Channel 7-G • Encryption Active</p>
+      </div>
+    </div>
+
+    <div id="self-destruct" role="status" aria-live="assertive">
+      <div class="self-destruct-panel">
+        <p class="self-destruct-heading">!!! ALERT !!!</p>
+        <p>
+          This message will self-destruct in
+          <span class="self-destruct-countdown">5</span> seconds.
+        </p>
+      </div>
+    </div>
+
+    <div id="explosion" aria-hidden="true">
+      <div class="explosion-flash"></div>
+      <div class="explosion-core"></div>
+      <div class="explosion-ring"></div>
+      <div class="flame-field">
+        <div class="flame layer-1"></div>
+        <div class="flame layer-2"></div>
+        <div class="flame layer-3"></div>
+      </div>
+      <div class="smoke"></div>
+    </div>
+
+    <main id="dossier" aria-label="Birthday Dossier">
+      <header class="dossier-header">
+        <div class="header-label">CLASSIFIED DOSSIER</div>
+        <h1>Subject: Agent Phoenix</h1>
+        <p class="header-meta">
+          Clearance Level: Omega Black • File Reference: BRD-0425 • Eyes Only
+        </p>
+        <div class="header-meta status-chips" role="presentation">
+          <span class="chip threat">Threat Level: Zero</span>
+          <span class="chip active">Mission Status: Active</span>
+          <span class="chip badge">Authorization: Ultra Violet</span>
+        </div>
+      </header>
+
+      <section class="dossier-overview">
+        <div class="overview-column">
+          <h2>Operational Snapshot</h2>
+          <p>
+            A highly decorated operative with an impeccable record and a habit of
+            making birthdays legendary. Current mission parameters include
+            maximum celebration, sustained surprise, and absolute enjoyment.
+          </p>
+          <p class="birthday-message">
+            Happy Birthday, Agent! Your mission briefing is simple: report to
+            HQ for festivities, debrief over cake, and execute Operation
+            Celebration with extreme enthusiasm. The agency is honored to serve
+            alongside you—today we toast to your brilliance.
+          </p>
+        </div>
+        <div class="overview-column dossier-media">
+          <figure class="photo-card" data-label="Surveillance Capture A">
+            <!-- Replace the placeholder below with your own image once available -->
+            <img src="assets/images/subject-1.svg" alt="Primary subject portrait" />
+          </figure>
+          <figure class="photo-card" data-label="Field Report B">
+            <img src="assets/images/subject-2.svg" alt="Subject with allies" />
+          </figure>
+          <figure class="photo-card" data-label="Mission Evidence C">
+            <img src="assets/images/subject-3.svg" alt="Memorable mission moment" />
+          </figure>
+        </div>
+      </section>
+
+      <section class="mission-metrics" aria-label="Agent performance metrics">
+        <article class="metric-card">
+          <h3>Specializations</h3>
+          <ul>
+            <li>Infiltration &amp; Surprise Coordination</li>
+            <li>Advanced Celebration Orchestration</li>
+            <li>Rapid Response Cake Acquisition</li>
+          </ul>
+        </article>
+        <article class="metric-card">
+          <h3>Recent Field Notes</h3>
+          <p>
+            Agent Phoenix neutralized boredom across three sectors, uplifted allied
+            morale by 212%, and is cleared for Operation Birthday Blaze.
+          </p>
+          <p class="metric-highlight">Recommendation: Maximum fanfare authorized.</p>
+        </article>
+        <article class="metric-card">
+          <h3>Vitals</h3>
+          <dl>
+            <div>
+              <dt>Resolve</dt>
+              <dd>∞</dd>
+            </div>
+            <div>
+              <dt>Humor Index</dt>
+              <dd>Off the charts</dd>
+            </div>
+            <div>
+              <dt>Celebration Level</dt>
+              <dd>Redline</dd>
+            </div>
+          </dl>
+        </article>
+      </section>
+
+      <section class="intel-grid">
+        <article class="intel-card">
+          <h3>Allied Intel</h3>
+          <p>
+            Multiple agents confirm Agent Phoenix’s legendary status. Expect
+            high morale, unstoppable laughter, and an unshakable sense of
+            adventure throughout the operation.
+          </p>
+        </article>
+        <article class="intel-card">
+          <h3>Mission Directives</h3>
+          <ul>
+            <li>Deploy confetti barrage at 1900 hours.</li>
+            <li>Initiate celebratory soundtrack immediately upon arrival.</li>
+            <li>Secure cake integrity by any means necessary.</li>
+          </ul>
+        </article>
+        <article class="intel-card">
+          <h3>Gift Logistics</h3>
+          <p>
+            Packages routed through covert channels Alpha, Delta, and Echo. Do
+            not open until Agent Phoenix issues the all-clear phrase: “Let’s
+            light the candles.”
+          </p>
+        </article>
+      </section>
+
+      <section class="timeline" aria-label="Mission timeline">
+        <h2>Operation Timeline</h2>
+        <ol>
+          <li>
+            <span class="timestamp">1700 hours</span>
+            Agents assemble, run last-minute surveillance sweep.
+          </li>
+          <li>
+            <span class="timestamp">1800 hours</span>
+            Lights dim, dossier presented, surprise synchronized.
+          </li>
+          <li>
+            <span class="timestamp">1830 hours</span>
+            Signature toast delivered. Cue confetti barrage.
+          </li>
+          <li>
+            <span class="timestamp">1900 hours</span>
+            Cake protocol initiated. Celebrate without restraint.
+          </li>
+        </ol>
+      </section>
+
+      <footer class="dossier-footer">
+        <div class="security-stamp" aria-hidden="true">Top Secret Clearance</div>
+        <p>
+          Report compiled by <strong>Directive Orion</strong>. Memorize and burn
+          after celebration. Your legend only grows from here.
+        </p>
+      </footer>
+    </main>
+
+    <div id="fuse">
+      <div class="fuse-track">
+        <div class="fuse-progress"></div>
+        <div class="spark"></div>
+      </div>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
