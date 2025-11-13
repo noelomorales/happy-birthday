@@ -237,6 +237,7 @@
       role="alertdialog"
       aria-live="polite"
       aria-label="Incoming secure message"
+      data-docked-label="Archived transmission"
     >
       <div class="message-shell">
         <header class="message-header">
@@ -245,7 +246,17 @@
             <span class="message-separator" aria-hidden="true">•</span>
             <span class="message-author">Noel</span>
           </div>
-          <span class="message-status" aria-hidden="true">ENCRYPTED</span>
+          <div class="message-actions">
+            <span class="message-status" aria-hidden="true">ENCRYPTED</span>
+            <button
+              type="button"
+              class="message-close"
+              data-close-transmission
+              aria-label="Close transmission"
+            >
+              Close
+            </button>
+          </div>
         </header>
         <div class="message-body" data-message-text>
           🍷
