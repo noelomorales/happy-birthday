@@ -1224,6 +1224,20 @@ body::after {
   z-index: 85;
 }
 
+body.final-transmission::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(5, 7, 9, 0.78), rgba(5, 7, 9, 0.78)),
+    url("IMG_1476.jpeg") center/cover no-repeat;
+  filter: grayscale(100%) contrast(1.05);
+  opacity: 0.48;
+  pointer-events: none;
+  z-index: 88;
+  transition: opacity 0.6s ease;
+}
+
 body.explode::after {
   animation: blackout 1.4s ease forwards 1.15s;
 }
