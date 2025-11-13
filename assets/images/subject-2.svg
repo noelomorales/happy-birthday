@@ -1,11 +1,78 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="640" height="420" viewBox="0 0 640 420">
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="420" viewBox="0 0 640 420" role="img" aria-labelledby="title desc">
+  <title id="title">Field agents on assignment</title>
+  <desc id="desc">
+    Stylised photograph of two field agents reviewing intel in front of a holographic city map.
+  </desc>
   <defs>
-    <linearGradient id="g2" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#09121f" />
-      <stop offset="100%" stop-color="#152d4a" />
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#031625" />
+      <stop offset="100%" stop-color="#0c2c3c" />
     </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="rgba(0, 255, 194, 0.5)" />
+      <stop offset="100%" stop-color="rgba(0, 255, 194, 0)" />
+    </radialGradient>
+    <linearGradient id="agentA" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#06263d" />
+      <stop offset="100%" stop-color="#021320" />
+    </linearGradient>
+    <linearGradient id="agentB" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#10354d" />
+      <stop offset="100%" stop-color="#041a2b" />
+    </linearGradient>
+    <linearGradient id="console" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#16ffc4" />
+      <stop offset="100%" stop-color="#0d6ff3" />
+    </linearGradient>
+    <pattern id="scan-grid" width="26" height="26" patternUnits="userSpaceOnUse">
+      <rect x="0" y="0" width="26" height="26" fill="none" stroke="rgba(20, 180, 230, 0.18)" stroke-width="1" />
+      <circle cx="13" cy="13" r="2" fill="rgba(0, 255, 200, 0.25)" />
+    </pattern>
+    <filter id="grain">
+      <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" seed="7" />
+      <feComponentTransfer>
+        <feFuncA type="linear" slope="0.3" />
+      </feComponentTransfer>
+      <feBlend mode="soft-light" in2="SourceGraphic" />
+    </filter>
   </defs>
-  <rect width="640" height="420" fill="url(#g2)" />
-  <rect x="20" y="20" width="600" height="380" fill="none" stroke="#00f0ff" stroke-width="4" stroke-dasharray="16 14" opacity="0.7" />
-  <text x="50%" y="50%" font-size="36" font-family="'Share Tech Mono', monospace" fill="#00f0ff" text-anchor="middle">ADD FIELD PHOTO</text>
+  <rect width="640" height="420" fill="url(#bg)" />
+  <rect width="620" height="400" x="10" y="10" fill="none" stroke="#19ffd3" stroke-width="3" stroke-dasharray="18 12" opacity="0.8" />
+  <rect x="60" y="68" width="520" height="220" fill="rgba(2, 24, 34, 0.6)" stroke="rgba(0, 255, 194, 0.35)" />
+  <rect x="60" y="68" width="520" height="220" fill="url(#scan-grid)" opacity="0.9" />
+  <rect x="60" y="68" width="520" height="220" fill="url(#glow)" opacity="0.55" />
+  <g fill="#16ffd0" opacity="0.65" font-family="'Share Tech Mono', monospace" font-size="14">
+    <text x="84" y="108">MISSION: OBSERVE SHIPPING LANES</text>
+    <text x="84" y="134">STATUS: ACTIVE • CHANNEL 5</text>
+    <text x="84" y="160">ASSET LINK: REVANA-PRIME</text>
+  </g>
+  <g transform="translate(130 220)">
+    <ellipse cx="0" cy="0" rx="78" ry="90" fill="url(#agentA)" filter="url(#grain)" />
+    <ellipse cx="0" cy="-74" rx="36" ry="40" fill="#0d2e44" />
+    <ellipse cx="0" cy="-74" rx="28" ry="30" fill="#123a56" />
+    <rect x="-58" y="-12" width="116" height="34" rx="14" fill="#0d1e2f" />
+    <path d="M-46 -46 Q0 -14 46 -46 L46 36 Q0 62 -46 36 Z" fill="rgba(0, 255, 194, 0.16)" />
+    <circle cx="-16" cy="-78" r="6" fill="#1dffde" opacity="0.75" />
+  </g>
+  <g transform="translate(360 238)">
+    <ellipse cx="0" cy="0" rx="86" ry="106" fill="url(#agentB)" filter="url(#grain)" />
+    <ellipse cx="0" cy="-82" rx="40" ry="46" fill="#123958" />
+    <ellipse cx="0" cy="-82" rx="30" ry="34" fill="#1c4d72" />
+    <rect x="-68" y="-6" width="136" height="40" rx="16" fill="#071420" />
+    <path d="M-52 -42 Q0 -6 52 -42 L52 52 Q0 88 -52 52 Z" fill="rgba(24, 128, 255, 0.18)" />
+    <circle cx="18" cy="-90" r="6" fill="#49f1ff" opacity="0.85" />
+  </g>
+  <g transform="translate(140 288)">
+    <rect x="0" y="0" width="360" height="72" rx="14" fill="#05121e" stroke="#0fd8ff" stroke-width="2" />
+    <rect x="18" y="16" width="160" height="12" rx="6" fill="#0c2c46" />
+    <rect x="18" y="36" width="220" height="12" rx="6" fill="#0c2c46" />
+    <rect x="200" y="20" width="118" height="20" rx="10" fill="url(#console)" />
+    <circle cx="338" cy="24" r="6" fill="#1cffc4" />
+    <circle cx="338" cy="48" r="6" fill="#ff3d8c" />
+  </g>
+  <rect x="60" y="336" width="520" height="38" fill="rgba(2, 30, 44, 0.85)" stroke="rgba(0, 255, 194, 0.35)" />
+  <g fill="#16ffd0" font-family="'Share Tech Mono', monospace" font-size="16" opacity="0.7">
+    <text x="84" y="360">FIELD REPORT B</text>
+    <text x="360" y="360" text-anchor="end">LIVE FEED • OPS ROOM</text>
+  </g>
 </svg>
