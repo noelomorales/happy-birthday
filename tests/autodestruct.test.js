@@ -92,7 +92,8 @@ describe("Autodestruct timeline", () => {
 
     advance(constants.SELF_DESTRUCT_WARNING);
 
-    expect(document.body.classList.contains("explode")).toBe(true);
+    expect(controller.state.completed).toBe(true);
+    expect(document.body.classList.contains("explode")).toBe(false);
     expect(pauseButton.disabled).toBe(true);
     expect(pauseButton.textContent).toBe("Autodestruct Complete");
   });
@@ -120,6 +121,7 @@ describe("Autodestruct timeline", () => {
     expect(overlay.classList.contains("visible")).toBe(true);
 
     advance(constants.SELF_DESTRUCT_WARNING);
-    expect(document.body.classList.contains("explode")).toBe(true);
+    expect(controller.state.completed).toBe(true);
+    expect(document.body.classList.contains("explode")).toBe(false);
   });
 });

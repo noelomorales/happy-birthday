@@ -490,8 +490,6 @@ document.addEventListener("DOMContentLoaded", () => {
     INTRO_CONFIRM_TIME
   );
 
-  let transmissionReady = false;
-  let transmissionRequested = false;
   let transmissionDisplayed = false;
 
   const displayTransmission = () => {
@@ -503,20 +501,47 @@ document.addEventListener("DOMContentLoaded", () => {
     showTransmission(liveMessage, liveMessageBody).catch(console.error);
   };
 
-  const requestTransmissionDisplay = () => {
-    transmissionRequested = true;
-    if (!transmissionReady) {
-      return;
-    }
-
-    displayTransmission();
-  };
-
   const markTransmissionReady = () => {
-    transmissionReady = true;
-    if (transmissionRequested && !transmissionDisplayed) {
+    if (!transmissionDisplayed) {
       displayTransmission();
     }
+  };
+
+  const recoverFromExplosion = () => {
+    if (body) {
+      body.classList.add("explosion-recovery");
+
+      if (
+        typeof window !== "undefined" &&
+        typeof window.requestAnimationFrame === "function"
+      ) {
+        window.requestAnimationFrame(() => {
+          window.requestAnimationFrame(() => {
+            body.classList.remove("explode");
+          });
+        });
+      } else {
+        body.classList.remove("explode");
+      }
+    }
+
+    if (selfDestructOverlay) {
+      selfDestructOverlay.classList.remove("visible");
+    }
+
+    if (fuse) {
+      fuse.classList.remove("ignited");
+    }
+
+    scheduler.schedule(
+      "recoverCleanup",
+      () => {
+        if (body) {
+          body.classList.remove("explosion-recovery");
+        }
+      },
+      900
+    );
   };
 
   scheduler.schedule(
@@ -555,9 +580,9 @@ document.addEventListener("DOMContentLoaded", () => {
   );
 
   scheduler.schedule(
-    "transmissionReveal",
+    "recover",
     () => {
-      requestTransmissionDisplay();
+      recoverFromExplosion();
     },
     FUSE_DURATION + SELF_DESTRUCT_WARNING + POST_EXPLOSION_TRANSMISSION_DELAY
   );
@@ -1525,6 +1550,31 @@ function createController(env = {}) {
     state.completed = true;
   };
 
+  const recoverAfterExplosion = () => {
+    if (doc.body) {
+      doc.body.classList.add("explosion-recovery");
+      doc.body.classList.remove("explode");
+    }
+
+    if (selfDestructOverlay) {
+      selfDestructOverlay.classList.remove("visible");
+    }
+
+    if (fuse) {
+      fuse.classList.remove("ignited");
+    }
+
+    schedulerInstance.schedule(
+      "recoverCleanup",
+      () => {
+        if (doc.body) {
+          doc.body.classList.remove("explosion-recovery");
+        }
+      },
+      900
+    );
+  };
+
   const scheduleTimeline = () => {
     schedulerInstance.schedule("introConfirm", confirmIntro, INTRO_CONFIRM_TIME);
     schedulerInstance.schedule(
@@ -1538,6 +1588,13 @@ function createController(env = {}) {
       triggerExplosion,
       FUSE_DURATION + SELF_DESTRUCT_WARNING
     );
+    schedulerInstance.schedule(
+      "recover",
+      recoverAfterExplosion,
+      FUSE_DURATION +
+        SELF_DESTRUCT_WARNING +
+        POST_EXPLOSION_TRANSMISSION_DELAY
+    );
   };
 
   const resetView = () => {
@@ -1550,7 +1607,8 @@ function createController(env = {}) {
         "show-dossier",
         "explode",
         "paused",
-        "final-transmission"
+        "final-transmission",
+        "explosion-recovery"
       );
     }
     if (fuse) {
