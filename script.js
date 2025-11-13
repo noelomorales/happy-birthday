@@ -1,3 +1,10 @@
+const IMAGE_MANIFEST_URL =
+  (typeof window !== "undefined" && window.IMAGE_MANIFEST_URL) ||
+  "assets/images/manifest.json";
+const IMAGE_QUEUE_STORAGE_KEY =
+  (typeof window !== "undefined" && window.IMAGE_QUEUE_STORAGE_KEY) ||
+  "hb-dossier-image-queue";
+
 const TERMINAL_BOOT_LINES = [
   ">> SECURE INTERFACE ONLINE",
   ">> NETWORK LINK: STABLE",
@@ -75,6 +82,12 @@ async function assignRandomDossierImages() {
         updateImageSource(target, src);
       }
     });
+
+    const focusHost = document.querySelector("[data-focus-image]");
+    const focusImage = selections[0] || manifest.images[0];
+    if (focusHost && typeof focusImage === "string" && focusImage.length > 0) {
+      focusHost.dataset.focusImage = focusImage;
+    }
   } catch (error) {
     console.error("Unable to randomize dossier imagery", error);
   }
