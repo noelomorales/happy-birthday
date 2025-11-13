@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="420" viewBox="0 0 640 420">
+  <defs>
+    <linearGradient id="g3" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#1a0f1f" />
+      <stop offset="100%" stop-color="#40204a" />
+    </linearGradient>
+  </defs>
+  <rect width="640" height="420" fill="url(#g3)" />
+  <rect x="15" y="15" width="610" height="390" fill="none" stroke="#ffaa00" stroke-width="5" stroke-dasharray="18 16" opacity="0.65" />
+  <text x="50%" y="45%" font-size="38" font-family="'Share Tech Mono', monospace" fill="#ffaa00" text-anchor="middle">EVIDENCE GOES HERE</text>
+  <text x="50%" y="60%" font-size="22" font-family="'Share Tech Mono', monospace" fill="#ffffff" text-anchor="middle" opacity="0.7">Drop your own mission snapshot</text>
+</svg>
