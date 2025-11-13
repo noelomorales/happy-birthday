@@ -356,6 +356,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const pauseButton = document.getElementById("debug-pause");
   const liveMessage = document.getElementById("live-message");
   const liveMessageBody = liveMessage.querySelector(".message-body");
+  const closeTransmissionButton = liveMessage
+    ? liveMessage.querySelector("[data-close-transmission]")
+    : null;
   const focusStage = document.getElementById("focus-stage");
   const focusContent = focusStage.querySelector(".focus-content");
   const fuse = document.getElementById("fuse");
@@ -458,6 +461,48 @@ document.addEventListener("DOMContentLoaded", () => {
   );
 
   prepareStreamItems(orderedStreamItems, liveMessageBody, liveMessage);
+
+  const dossier = document.getElementById("dossier");
+  let transmissionDocked = false;
+
+  const dockTransmission = () => {
+    if (!liveMessage || transmissionDocked) {
+      return;
+    }
+
+    transmissionDocked = true;
+
+    if (body) {
+      body.classList.remove("final-transmission");
+    }
+
+    if (dossier && liveMessage.parentElement !== dossier) {
+      dossier.appendChild(liveMessage);
+    }
+
+    liveMessage.classList.add("docked");
+    liveMessage.classList.remove("visible");
+    liveMessage.setAttribute("role", "region");
+    liveMessage.setAttribute("aria-live", "off");
+    liveMessage.setAttribute(
+      "aria-label",
+      liveMessage.getAttribute("data-docked-label") || "Stored transmission"
+    );
+  };
+
+  if (closeTransmissionButton) {
+    closeTransmissionButton.addEventListener("click", () => {
+      dockTransmission();
+    });
+  }
+
+  if (liveMessage) {
+    liveMessage.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" || event.key === "Esc") {
+        dockTransmission();
+      }
+    });
+  }
 
   if (decryptionMessage) {
     const fallbackText = extractText(decryptionMessage);
@@ -936,7 +981,7 @@ function prepareStreamItems(items, messageBody, messageContainer) {
   const messageText = extractText(messageBody);
   messageBody.dataset.streamText = messageText;
   messageBody.textContent = "";
-  messageContainer.classList.remove("visible");
+  messageContainer.classList.remove("visible", "docked");
 
   if (typeof document !== "undefined" && document.body) {
     document.body.classList.remove("final-transmission");
@@ -1057,6 +1102,11 @@ async function showTransmission(container, messageBody) {
   container.classList.add("visible");
   await controlledDelay(220);
   await typeText(messageBody, messageBody.dataset.streamText || "", 12);
+
+  const closeButton = container.querySelector("[data-close-transmission]");
+  if (closeButton && typeof closeButton.focus === "function") {
+    closeButton.focus();
+  }
 }
 
 function resolveFocusLabel(item) {

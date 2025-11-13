@@ -1762,6 +1762,19 @@ body.explode .smoke {
 #live-message.visible {
   opacity: 1;
   transform: translate(-50%, 0) scale(1);
+  pointer-events: auto;
+}
+
+#live-message.docked {
+  position: static;
+  bottom: auto;
+  left: auto;
+  width: min(100%, 640px);
+  margin: clamp(2rem, 6vw, 3.5rem) auto 0;
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+  transition: none;
 }
 
 .message-shell {
@@ -1806,6 +1819,14 @@ body.explode .smoke {
   text-transform: uppercase;
 }
 
+.message-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
 .message-prefix {
   font-weight: 600;
 }
@@ -1827,7 +1848,31 @@ body.explode .smoke {
   text-transform: uppercase;
   color: rgba(198, 160, 69, 0.75);
   text-shadow: 0 0 12px rgba(0, 0, 0, 0.45);
-  margin-left: auto;
+}
+
+.message-close {
+  padding: 0.35rem 0.9rem;
+  border: 1px solid rgba(198, 160, 69, 0.45);
+  background: rgba(12, 16, 18, 0.7);
+  color: rgba(239, 224, 195, 0.85);
+  font-family: "IBM Plex Mono", "IBM Plex Sans", monospace;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.24rem;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.message-close:hover,
+.message-close:focus-visible {
+  background: rgba(198, 160, 69, 0.18);
+  color: rgba(255, 246, 226, 0.95);
+  border-color: rgba(198, 160, 69, 0.65);
+  outline: none;
+}
+
+.message-close:focus-visible {
+  box-shadow: 0 0 0 2px rgba(198, 160, 69, 0.35);
 }
 
 .message-body {
@@ -1852,18 +1897,19 @@ body.explode .smoke {
 
 @keyframes beam-sweep {
   0% {
-    transform: translateY(-55vh);
+    transform: translateY(-100%);
     opacity: 0;
   }
-  15% {
-    opacity: 0.75;
+  12% {
+    opacity: 0.85;
+    transform: translateY(-4%);
   }
   50% {
-    transform: translateY(25vh);
+    transform: translateY(50vh);
     opacity: 1;
   }
   100% {
-    transform: translateY(110vh);
+    transform: translateY(calc(100vh + 100%));
     opacity: 0;
   }
 }
