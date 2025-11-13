@@ -1,5 +1,27 @@
-const INTRO_CONFIRM_TIME = 3400;
-const INTRO_COMPLETE_TIME = 5600;
+const TERMINAL_BOOT_LINES = [
+  ">> LCARS CORE: EPSILON HANDSHAKE ENGAGED",
+  ">> SUBSPACE ROUTER // NX-74205 CHANNEL STABLE",
+  ">> TACHYON BACKTRACE MASK........ ONLINE",
+  ">> QUANTUM CRYPTOGRAPHIC MESH: GREEN",
+  ">> REQUESTING BIOMETRIC RESONANCE TRACE",
+];
+
+const TERMINAL_CHAR_DELAY = 18;
+const TERMINAL_LINE_DELAY = 140;
+const SCAN_PREP_DELAY = 260;
+const SCAN_DURATION = 2600;
+const POST_CONFIRM_DELAY = 1600;
+
+const INTRO_CONFIRM_TIME = Math.round(
+  calculateTerminalBootDuration(
+    TERMINAL_BOOT_LINES,
+    TERMINAL_CHAR_DELAY,
+    TERMINAL_LINE_DELAY
+  ) +
+    SCAN_PREP_DELAY +
+    SCAN_DURATION
+);
+const INTRO_COMPLETE_TIME = INTRO_CONFIRM_TIME + POST_CONFIRM_DELAY;
 const FUSE_DURATION = 45000;
 const SELF_DESTRUCT_WARNING = 5000;
 const POST_EXPLOSION_TRANSMISSION_DELAY = 3200;
@@ -9,6 +31,10 @@ const DEFAULT_FOCUS_HOLD = 900;
 document.documentElement.style.setProperty(
   "--fuse-duration",
   `${FUSE_DURATION}ms`
+);
+document.documentElement.style.setProperty(
+  "--scan-duration",
+  `${SCAN_DURATION}ms`
 );
 
 const scheduler = createScheduler();
@@ -208,10 +234,67 @@ function updateImageSource(img, src) {
   img.dataset.randomizedSrc = src;
 }
 
+function calculateTerminalBootDuration(lines, charDelay, lineDelay) {
+  const safeCharDelay = Math.max(1, Number(charDelay) || 0);
+  const safeLineDelay = Math.max(0, Number(lineDelay) || 0);
+
+  return lines.reduce((total, line, index) => {
+    const length = typeof line === "string" ? line.length : 0;
+    const charTime = length * safeCharDelay;
+    const pause = index < lines.length - 1 ? safeLineDelay : 0;
+    return total + charTime + pause;
+  }, 0);
+}
+
+async function playTerminalBootSequence(target, lines, options = {}) {
+  if (!target || !lines || !lines.length) {
+    return;
+  }
+
+  const charDelay = Math.max(6, Number(options.charDelay) || TERMINAL_CHAR_DELAY);
+  const lineDelay = Math.max(40, Number(options.lineDelay) || TERMINAL_LINE_DELAY);
+
+  target.textContent = "";
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index];
+    await typeTerminalLine(target, line, charDelay);
+    if (index < lines.length - 1) {
+      await controlledDelay(lineDelay);
+    }
+  }
+}
+
+async function typeTerminalLine(target, line, charDelay) {
+  const content = typeof line === "string" ? line : "";
+  const step = Math.max(6, Math.floor(charDelay));
+
+  for (const char of content) {
+    await waitIfPaused();
+    target.textContent += char;
+    target.scrollTop = target.scrollHeight;
+    await controlledDelay(step);
+  }
+
+  await waitIfPaused();
+  target.textContent += "\n";
+  target.scrollTop = target.scrollHeight;
+}
+
+function beginBiometricScan(introElement) {
+  if (!introElement) {
+    return;
+  }
+
+  introElement.classList.add("scanning");
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   const body = document.body;
   const intro = document.getElementById("intro");
-  const introText = intro.querySelector(".intro-text");
+  const introText = intro ? intro.querySelector(".intro-text") : null;
+  const introSubtext = intro ? intro.querySelector(".intro-subtext") : null;
+  const terminalLog = intro ? intro.querySelector(".terminal-log") : null;
   const selfDestructOverlay = document.getElementById("self-destruct");
   const countdownEl = selfDestructOverlay.querySelector(
     ".self-destruct-countdown"
@@ -233,6 +316,36 @@ document.addEventListener("DOMContentLoaded", () => {
   assignRandomDossierImages();
 
   countdownState.display = countdownEl;
+
+  if (introText) {
+    introText.textContent = "Stabilizing subspace handshake...";
+  }
+
+  if (introSubtext) {
+    introSubtext.textContent = "Routing through secure relays";
+  }
+
+  if (terminalLog) {
+    playTerminalBootSequence(terminalLog, TERMINAL_BOOT_LINES, {
+      charDelay: TERMINAL_CHAR_DELAY,
+      lineDelay: TERMINAL_LINE_DELAY,
+    })
+      .then(async () => {
+        if (introText) {
+          introText.textContent = "Biometric scan engaged...";
+        }
+        if (introSubtext) {
+          introSubtext.textContent = "Initiating redline sweep";
+        }
+        await controlledDelay(SCAN_PREP_DELAY);
+        beginBiometricScan(intro);
+        await controlledDelay(SCAN_DURATION);
+        if (introSubtext) {
+          introSubtext.textContent = "Awaiting confirmation signature";
+        }
+      })
+      .catch(console.error);
+  }
 
   const streamItems = Array.from(document.querySelectorAll(".stream-item"));
   const orderedStreamItems = streamItems.sort((a, b) =>
@@ -256,10 +369,22 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  scheduler.schedule("introConfirm", () => {
-    intro.classList.add("confirmed");
-    introText.textContent = "Identity Confirmed";
-  }, INTRO_CONFIRM_TIME);
+  scheduler.schedule(
+    "introConfirm",
+    () => {
+      if (intro) {
+        intro.classList.add("confirmed");
+        intro.classList.remove("scanning");
+      }
+      if (introText) {
+        introText.textContent = "Identity Confirmed";
+      }
+      if (introSubtext) {
+        introSubtext.textContent = "Clearance matrix synchronized";
+      }
+    },
+    INTRO_CONFIRM_TIME
+  );
 
   let transmissionReady = false;
   let transmissionRequested = false;
@@ -955,6 +1080,8 @@ function createController(env = {}) {
 
   const intro = doc.getElementById("intro");
   const introText = intro ? intro.querySelector(".intro-text") : null;
+  const introSubtext = intro ? intro.querySelector(".intro-subtext") : null;
+  const terminalLog = intro ? intro.querySelector(".terminal-log") : null;
   const selfDestructOverlay = doc.getElementById("self-destruct");
   const countdownDisplay = selfDestructOverlay
     ? selfDestructOverlay.querySelector(".self-destruct-countdown")
@@ -977,14 +1104,19 @@ function createController(env = {}) {
       "--fuse-duration",
       `${FUSE_DURATION}ms`
     );
+    doc.documentElement.style.setProperty("--scan-duration", `${SCAN_DURATION}ms`);
   };
 
   const confirmIntro = () => {
     if (intro) {
       intro.classList.add("confirmed");
+      intro.classList.remove("scanning");
     }
     if (introText) {
       introText.textContent = "Identity Confirmed";
+    }
+    if (introSubtext) {
+      introSubtext.textContent = "Clearance matrix synchronized";
     }
   };
 
@@ -1054,13 +1186,22 @@ function createController(env = {}) {
   const resetView = () => {
     isPaused = false;
     if (intro) {
-      intro.classList.remove("intro-complete", "confirmed");
+      intro.classList.remove("intro-complete", "confirmed", "scanning");
     }
     if (doc.body) {
       doc.body.classList.remove("show-dossier", "explode", "paused");
     }
     if (fuse) {
       fuse.classList.remove("ignited");
+    }
+    if (introText) {
+      introText.textContent = "Stabilizing subspace handshake...";
+    }
+    if (introSubtext) {
+      introSubtext.textContent = "Routing through secure relays";
+    }
+    if (terminalLog) {
+      terminalLog.textContent = "";
     }
     if (pauseButton) {
       pauseButton.disabled = true;
