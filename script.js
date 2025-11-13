@@ -75,7 +75,10 @@ async function assignRandomDossierImages() {
       return;
     }
 
-    const selections = selectImagesFromManifest(manifest, imageTargets.length);
+    const selections = await selectImagesFromManifest(
+      manifest,
+      imageTargets.length
+    );
     selections.forEach((src, index) => {
       const target = imageTargets[index];
       if (target && typeof src === "string" && src.length > 0) {
@@ -142,21 +145,22 @@ function sanitizeManifestList(fileList) {
     });
 }
 
-function selectImagesFromManifest(manifest, count) {
+async function selectImagesFromManifest(manifest, count) {
   if (!manifest.images.length || count <= 0) {
     return [];
   }
 
   const storage = getLocalStorage();
-  const storedQueue = readStoredQueue(storage, manifest.version, manifest.images);
+  const orderedImages = await orderImagesByFreshness(manifest.images);
+  const storedQueue = readStoredQueue(storage, manifest.version, orderedImages);
   const workingQueue = storedQueue.length
     ? [...storedQueue]
-    : shuffleArray(manifest.images.slice());
+    : orderedImages.slice();
   const selections = [];
 
-  while (selections.length < count && manifest.images.length) {
+  while (selections.length < count && orderedImages.length) {
     if (!workingQueue.length) {
-      workingQueue.push(...shuffleArray(manifest.images.slice()));
+      workingQueue.push(...orderedImages);
     }
 
     const next = workingQueue.shift();
@@ -168,6 +172,50 @@ function selectImagesFromManifest(manifest, count) {
   persistQueue(storage, workingQueue, manifest.version);
 
   return selections;
+}
+
+async function orderImagesByFreshness(images) {
+  const uniqueImages = Array.isArray(images) ? Array.from(new Set(images)) : [];
+  if (!uniqueImages.length) {
+    return [];
+  }
+
+  const freshnessData = await Promise.all(
+    uniqueImages.map((src, index) => resolveImageFreshness(src, index))
+  );
+
+  freshnessData.sort((a, b) => {
+    if (b.lastModified !== a.lastModified) {
+      return b.lastModified - a.lastModified;
+    }
+    return b.index - a.index;
+  });
+
+  return freshnessData.map((entry) => entry.src);
+}
+
+async function resolveImageFreshness(src, index) {
+  const baseTimestamp = Number.isFinite(index) ? index : 0;
+
+  try {
+    const response = await fetch(src, {
+      method: "HEAD",
+      cache: "no-store",
+    });
+
+    if (response.ok) {
+      const header = response.headers.get("last-modified");
+      const parsed = header ? Date.parse(header) : NaN;
+      if (Number.isFinite(parsed)) {
+        return { src, index, lastModified: parsed }; // prefer server timestamp
+      }
+    }
+  } catch (error) {
+    // Ignore network issues and fall back to manifest order heuristics.
+  }
+
+  // Fall back to treating later entries as fresher if timestamps are unavailable.
+  return { src, index, lastModified: baseTimestamp };
 }
 
 function getLocalStorage() {
@@ -224,17 +272,6 @@ function persistQueue(storage, queue, version) {
   } catch (error) {
     // Fail silently; rotation will reset on next load if persistence is unavailable.
   }
-}
-
-function shuffleArray(values) {
-  const array = values.slice();
-
-  for (let i = array.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [array[i], array[j]] = [array[j], array[i]];
-  }
-
-  return array;
 }
 
 function updateImageSource(img, src) {
