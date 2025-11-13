@@ -13,25 +13,13 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <div class="background-layers" aria-hidden="true">
-      <div class="stars"></div>
-      <div class="nebula"></div>
-      <div class="grid"></div>
-      <div class="scanlines"></div>
-      <div class="corner-glow top-left"></div>
-      <div class="corner-glow bottom-right"></div>
-      <div class="film-grain"></div>
-    </div>
-
-    <div id="intro" class="active" role="status" aria-live="assertive">
+    <div id="intro" class="active">
       <div class="intro-content">
-        <div class="intro-badge">Secure Channel G-7</div>
         <div class="scan-mask">
           <div class="scan-line"></div>
         </div>
-        <p class="intro-text">Initializing systems...</p>
-        <p class="intro-status">Optical handshake pending</p>
-        <p class="intro-subtext">Stand by for biometric verification.</p>
+        <p class="intro-text" aria-live="polite">Initializing...</p>
+        <p class="intro-subtext">Secure Channel 7-G • Encryption Active</p>
       </div>
     </div>
 
@@ -58,210 +46,76 @@
     </div>
 
     <main id="dossier" aria-label="Birthday Dossier">
-      <div class="dossier-shell">
-        <div class="dossier-shell__glow" aria-hidden="true"></div>
-        <div class="dossier-frame">
-          <div class="dossier-frame__hinge top" aria-hidden="true"></div>
-          <div class="dossier-frame__hinge bottom" aria-hidden="true"></div>
+      <header class="dossier-header">
+        <div class="header-label">CLASSIFIED DOSSIER</div>
+        <h1>Subject: Agent Phoenix</h1>
+        <p class="header-meta">
+          Clearance Level: Omega Black • File Reference: BRD-0425 • Eyes Only
+        </p>
+      </header>
 
-          <header class="dossier-header">
-            <div class="header-label">Classified Dossier</div>
-            <div class="header-meta-line">
-              <span>Clearance Level: Omega Black</span>
-              <span>File Reference: BRD-0425</span>
-              <span>Eyes Only</span>
-            </div>
-            <h1>Subject: Agent Benito</h1>
-            <p class="header-subtext">
-              Mission-critical celebration briefing. Unauthorized viewing will
-              trigger automatic countermeasures.
-            </p>
-            <div class="status-chips" role="presentation">
-              <span class="chip threat">Threat Level: Double OO</span>
-              <span class="chip active">Mission Status: Active</span>
-              <span class="chip badge">Authorization: Ultra Violet</span>
-            </div>
-          </header>
-
-          <section class="dossier-overview">
-            <div class="overview-text">
-              <h2>Operational Snapshot</h2>
-              <p>
-                Highly decorated international man of mystery called into action
-                after decades of service for the latest impossible mission:
-                <strong>vivir la vida loca</strong>. Precision charm, elite
-                celebration tactics, and signature style guaranteed.
-              </p>
-              <p class="birthday-message">
-                Happy Birthday, Agent Benito. Report immediately to HQ for
-                festivities. Debrief over cake, coordinate with allied operatives,
-                and initiate Operation Celebration with extreme enthusiasm. The
-                agency salutes your brilliance.
-              </p>
-            </div>
-            <div class="dossier-media" aria-label="Surveillance gallery">
-              <figure class="photo-card" data-label="Capture A">
-                <img src="assets/images/subject-1.svg" alt="Primary subject portrait" />
-              </figure>
-              <figure class="photo-card" data-label="Capture B">
-                <img src="assets/images/subject-2.svg" alt="Subject with allies" />
-              </figure>
-              <figure class="photo-card" data-label="Capture C">
-                <img src="assets/images/subject-3.svg" alt="Memorable mission moment" />
-              </figure>
-            </div>
-          </section>
-
-          <section class="mission-metrics" aria-label="Agent performance metrics">
-            <article class="metric-card">
-              <h3>Specializations</h3>
-              <ul>
-                <li>Infiltration &amp; Surprise Coordination</li>
-                <li>Advanced Celebration Orchestration</li>
-                <li>Rapid Response Cake Acquisition</li>
-              </ul>
-            </article>
-            <article class="metric-card">
-              <h3>Recent Field Notes</h3>
-              <p>
-                Agent Benito neutralized boredom across three sectors, uplifted
-                allied morale by 212%, and is cleared for Operation Birthday
-                Blaze.
-              </p>
-              <p class="metric-highlight">Recommendation: Maximum fanfare authorized.</p>
-            </article>
-            <article class="metric-card">
-              <h3>Vitals</h3>
-              <dl>
-                <div>
-                  <dt>Resolve</dt>
-                  <dd>∞</dd>
-                </div>
-                <div>
-                  <dt>Humor Index</dt>
-                  <dd>Off the charts</dd>
-                </div>
-                <div>
-                  <dt>Celebration Level</dt>
-                  <dd>Redline</dd>
-                </div>
-              </dl>
-            </article>
-          </section>
-
-          <section class="intel-grid">
-            <article class="intel-card">
-              <h3>Allied Intel</h3>
-              <p>
-                Multiple agents confirm Agent Benito’s legendary status. Expect
-                unstoppable laughter, high morale, and adventure throughout the
-                operation.
-              </p>
-            </article>
-            <article class="intel-card">
-              <h3>Mission Directives</h3>
-              <ul>
-                <li>Deploy confetti barrage at 1900 hours.</li>
-                <li>Initiate celebratory soundtrack upon arrival.</li>
-                <li>Secure cake integrity by any means necessary.</li>
-              </ul>
-            </article>
-            <article class="intel-card">
-              <h3>Gift Logistics</h3>
-              <p>
-                Packages routed through covert channels Alpha, Delta, and Echo.
-                Await the all-clear phrase: “Let’s light the candles.”
-              </p>
-            </article>
-          </section>
-
-          <section class="mission-details" aria-label="Mission details">
-            <div class="mission-brief">
-              <h2>Mission Directive</h2>
-              <p>
-                Your mission, should you choose to accept it, is to celebrate
-                your life with reckless delight and establish a fortified drop
-                zone for every legendary vintage you command. Intelligence
-                confirms allied assets have secured a covert cellar awaiting your
-                signal.
-              </p>
-              <p>
-                Upon activation, route all incoming wine shipments through the
-                authorized channel. Expect encrypted acknowledgements, discrete
-                handoffs, and white-glove containment worthy of the world’s most
-                discerning operative.
-              </p>
-            </div>
-            <aside class="mission-drop" aria-label="Secure drop coordinates">
-              <div class="drop-header">
-                <h3>The Drop</h3>
-                <span class="drop-code">Priority Cellar Access</span>
-              </div>
-              <div class="drop-map" role="img" aria-label="Map showing drop location">
-                <div class="map-grid"></div>
-                <div class="map-reticle"></div>
-                <div class="map-coordinates">37.7569° N&nbsp;&nbsp;122.4194° W</div>
-              </div>
-              <address class="drop-location">
-                <span class="drop-label">Secure Drop Site:</span>
-                3173 21st St.<br />San Francisco, CA 94110
-              </address>
-              <p class="drop-note">
-                Couriers to log approach vector "Sonrisa" and verify passphrase
-                <em>"vino listo"</em> prior to release.
-              </p>
-            </aside>
-          </section>
-
-          <section class="timeline" aria-label="Mission timeline">
-            <h2>Operation Timeline</h2>
-            <ol>
-              <li>
-                <span class="timestamp">1700 hours</span>
-                Agents assemble, run last-minute surveillance sweep.
-              </li>
-              <li>
-                <span class="timestamp">1800 hours</span>
-                Lights dim, dossier presented, surprise synchronized.
-              </li>
-              <li>
-                <span class="timestamp">1830 hours</span>
-                Signature toast delivered. Cue confetti barrage.
-              </li>
-              <li>
-                <span class="timestamp">1900 hours</span>
-                Cake protocol initiated. Celebrate without restraint.
-              </li>
-            </ol>
-          </section>
-        </div>
-
-        <footer class="dossier-footer">
-          <div class="security-stamp" aria-hidden="true">Top Secret Clearance</div>
+      <section class="dossier-overview">
+        <div class="overview-column">
+          <h2>Operational Snapshot</h2>
           <p>
-            Report compiled by <strong>Directive Orion</strong>. Memorize and burn
-            after celebration. Your legend only grows from here.
+            A highly decorated operative with an impeccable record and a habit of
+            making birthdays legendary. Current mission parameters include
+            maximum celebration, sustained surprise, and absolute enjoyment.
           </p>
-        </footer>
-      </div>
+          <p class="birthday-message">
+            Happy Birthday, Agent! Your mission briefing is simple: report to
+            HQ for festivities, debrief over cake, and execute Operation
+            Celebration with extreme enthusiasm. The agency is honored to serve
+            alongside you—today we toast to your brilliance.
+          </p>
+        </div>
+        <div class="overview-column dossier-media">
+          <figure class="photo-card" data-label="Surveillance Capture A">
+            <!-- Replace the placeholder below with your own image once available -->
+            <img src="assets/images/subject-1.svg" alt="Primary subject portrait" />
+          </figure>
+          <figure class="photo-card" data-label="Field Report B">
+            <img src="assets/images/subject-2.svg" alt="Subject with allies" />
+          </figure>
+          <figure class="photo-card" data-label="Mission Evidence C">
+            <img src="assets/images/subject-3.svg" alt="Memorable mission moment" />
+          </figure>
+        </div>
+      </section>
+
+      <section class="intel-grid">
+        <article class="intel-card">
+          <h3>Allied Intel</h3>
+          <p>
+            Multiple agents confirm Agent Phoenix’s legendary status. Expect
+            high morale, unstoppable laughter, and an unshakable sense of
+            adventure throughout the operation.
+          </p>
+        </article>
+        <article class="intel-card">
+          <h3>Mission Directives</h3>
+          <ul>
+            <li>Deploy confetti barrage at 1900 hours.</li>
+            <li>Initiate celebratory soundtrack immediately upon arrival.</li>
+            <li>Secure cake integrity by any means necessary.</li>
+          </ul>
+        </article>
+        <article class="intel-card">
+          <h3>Gift Logistics</h3>
+          <p>
+            Packages routed through covert channels Alpha, Delta, and Echo. Do
+            not open until Agent Phoenix issues the all-clear phrase: “Let’s
+            light the candles.”
+          </p>
+        </article>
+      </section>
     </main>
 
-    <div id="fuse" aria-hidden="true">
+    <div id="fuse">
       <div class="fuse-track">
         <div class="fuse-progress"></div>
         <div class="spark"></div>
       </div>
-    </div>
-
-    <div class="control-hud">
-      <button
-        id="pause-toggle"
-        type="button"
-        class="hud-button"
-        aria-pressed="false"
-      >
-        Pause Autodestruct
-      </button>
     </div>
 
     <script src="script.js"></script>
