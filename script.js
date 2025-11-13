@@ -1,4 +1,3 @@
-const INTRO_STATUS_UPDATE = 1800;
 const INTRO_CONFIRM_TIME = 4000;
 const INTRO_COMPLETE_TIME = 6200;
 const FUSE_DURATION = 25000;
@@ -13,34 +12,14 @@ document.addEventListener("DOMContentLoaded", () => {
   const body = document.body;
   const intro = document.getElementById("intro");
   const introText = intro.querySelector(".intro-text");
-  const introStatus = intro.querySelector(".intro-status");
-  const introSubtext = intro.querySelector(".intro-subtext");
   const selfDestructOverlay = document.getElementById("self-destruct");
   const countdownEl = selfDestructOverlay.querySelector(
     ".self-destruct-countdown"
   );
 
   setTimeout(() => {
-    intro.classList.add("scanning");
-    if (introStatus) {
-      introStatus.textContent = "Optic scan sweeping";
-    }
-    if (introSubtext) {
-      introSubtext.textContent = "Calibrating biometric lattice";
-    }
-  }, INTRO_STATUS_UPDATE);
-
-  setTimeout(() => {
     intro.classList.add("confirmed");
-    if (introText) {
-      introText.textContent = "Identity Confirmed";
-    }
-    if (introStatus) {
-      introStatus.textContent = "Access Level: Omega Black";
-    }
-    if (introSubtext) {
-      introSubtext.textContent = "Welcome back, Agent Phoenix.";
-    }
+    introText.textContent = "Identity Confirmed";
   }, INTRO_CONFIRM_TIME);
 
   setTimeout(() => {
