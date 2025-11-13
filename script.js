@@ -3,6 +3,7 @@ const INTRO_COMPLETE_TIME = 6200;
 const FUSE_DURATION = 25000;
 const SELF_DESTRUCT_WARNING = 5000;
 const DEFAULT_TYPE_SPEED = 32;
+const DEFAULT_FOCUS_HOLD = 1200;
 
 document.documentElement.style.setProperty(
   "--fuse-duration",
@@ -32,6 +33,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const pauseButton = document.getElementById("debug-pause");
   const liveMessage = document.getElementById("live-message");
   const liveMessageBody = liveMessage.querySelector(".message-body");
+  const focusStage = document.getElementById("focus-stage");
+  const focusContent = focusStage.querySelector(".focus-content");
 
   countdownState.display = countdownEl;
 
@@ -53,9 +56,13 @@ document.addEventListener("DOMContentLoaded", () => {
     () => {
       intro.classList.add("intro-complete");
       body.classList.add("show-dossier");
-      runStreamSequence(orderedStreamItems, liveMessage, liveMessageBody).catch(
-        console.error
-      );
+      runStreamSequence(
+        orderedStreamItems,
+        liveMessage,
+        liveMessageBody,
+        focusStage,
+        focusContent
+      ).catch(console.error);
     },
     INTRO_COMPLETE_TIME
   );
@@ -81,7 +88,20 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
-function createScheduler() {
+function createScheduler(options = {}) {
+  const setTimer =
+    options.setTimeout || (typeof window !== "undefined" && window.setTimeout)
+      ? options.setTimeout || window.setTimeout.bind(window)
+      : setTimeout;
+  const clearTimer =
+    options.clearTimeout ||
+    (typeof window !== "undefined" && window.clearTimeout)
+      ? options.clearTimeout || window.clearTimeout.bind(window)
+      : clearTimeout;
+  const nowFn =
+    typeof options.now === "function"
+      ? options.now
+      : () => (typeof performance !== "undefined" ? performance.now() : Date.now());
   const timers = new Map();
 
   const schedule = (name, callback, delay) => {
@@ -89,11 +109,11 @@ function createScheduler() {
       name,
       callback,
       remaining: delay,
-      start: performance.now(),
+      start: nowFn(),
       id: null,
     };
 
-    timer.id = window.setTimeout(() => {
+    timer.id = setTimer(() => {
       timers.delete(name);
       callback();
     }, delay);
@@ -104,8 +124,8 @@ function createScheduler() {
 
   const pauseAll = () => {
     timers.forEach((timer) => {
-      clearTimeout(timer.id);
-      const elapsed = performance.now() - timer.start;
+      clearTimer(timer.id);
+      const elapsed = nowFn() - timer.start;
       timer.remaining = Math.max(timer.remaining - elapsed, 0);
     });
   };
@@ -118,8 +138,8 @@ function createScheduler() {
         return;
       }
 
-      timer.start = performance.now();
-      timer.id = window.setTimeout(() => {
+      timer.start = nowFn();
+      timer.id = setTimer(() => {
         timers.delete(name);
         timer.callback();
       }, timer.remaining);
@@ -133,6 +153,7 @@ function prepareStreamItems(items, messageBody, messageContainer) {
   items.forEach((item) => {
     const type = item.dataset.streamType || "text";
     item.classList.remove("active", "typing");
+    item.classList.remove("module-online");
 
     if (type === "text") {
       const content = extractText(item);
@@ -147,19 +168,64 @@ function prepareStreamItems(items, messageBody, messageContainer) {
   messageContainer.classList.remove("visible");
 }
 
-async function runStreamSequence(items, liveMessage, messageBody) {
+async function runStreamSequence(
+  items,
+  liveMessage,
+  messageBody,
+  focusStage,
+  focusContent
+) {
   for (const item of items) {
     await waitIfPaused();
     const type = item.dataset.streamType || "text";
+    const focusMode = item.dataset.focusMode || "";
+    const focusLabel = resolveFocusLabel(item);
+    const focusHold = Number(item.dataset.focusHold || 0);
 
     if (type === "text") {
       const speed = Number(item.dataset.streamSpeed) || DEFAULT_TYPE_SPEED;
-      await typeText(item, item.dataset.streamText || "", speed);
-      await controlledDelay(140);
-    } else {
-      item.classList.add("active");
-      await controlledDelay(260);
+      const textContent = item.dataset.streamText || "";
+
+      if (focusMode) {
+        await engageFocus(item, focusStage, focusContent, {
+          type,
+          mode: focusMode,
+          label: focusLabel,
+          speed: Number(item.dataset.focusSpeed) || speed,
+          text: textContent,
+          hold: focusHold || DEFAULT_FOCUS_HOLD,
+        });
+      }
+
+      await typeText(item, textContent, speed);
+      await controlledDelay(160);
+      continue;
     }
+
+    if (type === "media") {
+      if (focusMode) {
+        await engageFocus(item, focusStage, focusContent, {
+          type,
+          mode: focusMode,
+          label: focusLabel,
+          hold: focusHold || 1100,
+        });
+      }
+
+      item.classList.add("active");
+      await controlledDelay(320);
+      continue;
+    }
+
+    await engageFocus(item, focusStage, focusContent, {
+      type: "module",
+      mode: focusMode || "module",
+      label: focusLabel,
+      hold: focusHold || 1500,
+    });
+
+    item.classList.add("active");
+    await controlledDelay(520);
   }
 
   await controlledDelay(420);
@@ -170,6 +236,93 @@ async function showTransmission(container, messageBody) {
   container.classList.add("visible");
   await controlledDelay(220);
   await typeText(messageBody, messageBody.dataset.streamText || "", 28);
+}
+
+function resolveFocusLabel(item) {
+  if (item.dataset.focusTitle) {
+    return item.dataset.focusTitle;
+  }
+
+  const heading = item.querySelector("h2, h3, h4, h5");
+  if (heading && heading.textContent) {
+    return heading.textContent.trim();
+  }
+
+  const aria = item.getAttribute("aria-label");
+  if (aria) {
+    return aria;
+  }
+
+  return "Incoming Feed";
+}
+
+async function engageFocus(item, stage, content, config) {
+  if (!stage || !content) {
+    return;
+  }
+
+  await waitIfPaused();
+
+  const mode = config.mode || item.dataset.focusMode || "module";
+  const label = config.label || resolveFocusLabel(item);
+  const { container, target } = createFocusClone(item, {
+    mode,
+    label,
+    type: config.type,
+  });
+  const holdDuration = config.hold || DEFAULT_FOCUS_HOLD;
+  const typeSpeed = config.speed || DEFAULT_TYPE_SPEED;
+
+  stage.classList.remove("retreating", "engaged");
+  stage.dataset.mode = mode;
+  stage.setAttribute("aria-hidden", "false");
+  stage.classList.add("visible");
+
+  content.innerHTML = "";
+  content.appendChild(container);
+
+  await controlledDelay(60);
+  stage.classList.add("engaged");
+
+  if (config.type === "text") {
+    await typeText(target, config.text || "", typeSpeed);
+    await controlledDelay(240);
+  } else {
+    await controlledDelay(holdDuration);
+  }
+
+  stage.classList.add("retreating");
+  await controlledDelay(360);
+
+  stage.classList.remove("visible", "engaged", "retreating");
+  stage.removeAttribute("data-mode");
+  stage.setAttribute("aria-hidden", "true");
+  content.innerHTML = "";
+}
+
+function createFocusClone(item, config) {
+  const wrapper = document.createElement("div");
+  const labelEl = document.createElement("div");
+  const body = document.createElement("div");
+
+  wrapper.classList.add("focus-item", `focus-${config.mode}`);
+  labelEl.classList.add("focus-label");
+  labelEl.textContent = config.label;
+  body.classList.add("focus-body");
+
+  wrapper.appendChild(labelEl);
+  wrapper.appendChild(body);
+
+  if (config.type === "text") {
+    return { container: wrapper, target: body };
+  }
+
+  const clone = item.cloneNode(true);
+  clone.classList.remove("stream-item", "active", "typing", "module-online");
+  clone.removeAttribute("data-stream-order");
+
+  body.appendChild(clone);
+  return { container: wrapper, target: clone };
 }
 
 function extractText(element) {
@@ -281,42 +434,45 @@ function waitIfPaused() {
   });
 }
 
-function togglePause(button, body) {
+function togglePause(
+  button,
+  body,
+  schedulerInstance = scheduler,
+  countdown = countdownState
+) {
   isPaused = !isPaused;
   button.setAttribute("aria-pressed", String(isPaused));
   button.textContent = isPaused ? "Resume Timeline" : "Pause Timeline";
   body.classList.toggle("paused", isPaused);
 
   if (isPaused) {
-    scheduler.pauseAll();
-    countdownState.paused = true;
+    schedulerInstance.pauseAll();
+    countdown.paused = true;
   } else {
-    scheduler.resumeAll();
-    countdownState.paused = false;
-    if (countdownState.active && countdownState.rafId === null) {
-      countdownState.rafId = requestAnimationFrame((timestamp) =>
-        updateCountdown(timestamp, countdownState)
+    schedulerInstance.resumeAll();
+    countdown.paused = false;
+    if (countdown.active && countdown.rafId === null) {
+      countdown.rafId = requestAnimationFrame((timestamp) =>
+        updateCountdown(timestamp, countdown)
       );
     }
   }
 }
 
-function startCountdown(overlay) {
+function startCountdown(overlay, state = countdownState) {
   overlay.classList.add("visible");
-  countdownState.active = true;
-  countdownState.remainingMs = SELF_DESTRUCT_WARNING;
-  countdownState.lastTimestamp = null;
-  countdownState.paused = isPaused;
-  countdownState.display.textContent = Math.ceil(
-    countdownState.remainingMs / 1000
-  );
+  state.active = true;
+  state.remainingMs = SELF_DESTRUCT_WARNING;
+  state.lastTimestamp = null;
+  state.paused = isPaused;
+  state.display.textContent = Math.ceil(state.remainingMs / 1000);
 
-  if (countdownState.rafId !== null) {
-    cancelAnimationFrame(countdownState.rafId);
+  if (state.rafId !== null) {
+    cancelAnimationFrame(state.rafId);
   }
 
-  countdownState.rafId = requestAnimationFrame((timestamp) =>
-    updateCountdown(timestamp, countdownState)
+  state.rafId = requestAnimationFrame((timestamp) =>
+    updateCountdown(timestamp, state)
   );
 }
 
@@ -349,4 +505,214 @@ function updateCountdown(timestamp, state) {
   }
 
   state.rafId = requestAnimationFrame((next) => updateCountdown(next, state));
+}
+
+function createCountdownStateSnapshot(display) {
+  return {
+    active: false,
+    remainingMs: SELF_DESTRUCT_WARNING,
+    rafId: null,
+    paused: false,
+    lastTimestamp: null,
+    display,
+  };
+}
+
+function createController(env = {}) {
+  const doc = env.document || document;
+  const perf = env.performance || performance;
+  const timers = env.timers || {};
+
+  const schedulerInstance = createScheduler({
+    setTimeout: timers.setTimeout,
+    clearTimeout: timers.clearTimeout,
+    now: typeof perf.now === "function" ? () => perf.now() : undefined,
+  });
+
+  const intro = doc.getElementById("intro");
+  const introText = intro ? intro.querySelector(".intro-text") : null;
+  const selfDestructOverlay = doc.getElementById("self-destruct");
+  const countdownDisplay = selfDestructOverlay
+    ? selfDestructOverlay.querySelector(".self-destruct-countdown")
+    : null;
+  const dossier = doc.getElementById("dossier");
+  const fuse = doc.getElementById("fuse");
+  const pauseButton =
+    doc.getElementById("pause-toggle") || doc.getElementById("debug-pause");
+
+  const localCountdownState = createCountdownStateSnapshot(countdownDisplay);
+
+  const state = {
+    paused: false,
+    started: false,
+    completed: false,
+  };
+
+  const setFuseVariable = () => {
+    doc.documentElement.style.setProperty(
+      "--fuse-duration",
+      `${FUSE_DURATION}ms`
+    );
+  };
+
+  const confirmIntro = () => {
+    if (intro) {
+      intro.classList.add("confirmed");
+    }
+    if (introText) {
+      introText.textContent = "Identity Confirmed";
+    }
+  };
+
+  const unlockDossier = () => {
+    if (intro) {
+      intro.classList.add("intro-complete");
+    }
+    if (doc.body) {
+      doc.body.classList.add("show-dossier");
+    }
+    if (dossier) {
+      dossier.setAttribute("aria-hidden", "false");
+    }
+    if (pauseButton) {
+      pauseButton.disabled = false;
+      pauseButton.classList.add("active");
+      pauseButton.classList.remove("paused");
+      pauseButton.textContent = "Pause Autodestruct";
+    }
+    state.started = true;
+  };
+
+  const beginCountdown = () => {
+    if (fuse) {
+      fuse.classList.add("ignited");
+    }
+    if (selfDestructOverlay) {
+      selfDestructOverlay.classList.add("visible");
+    }
+    if (countdownDisplay) {
+      countdownDisplay.textContent = `${Math.ceil(
+        SELF_DESTRUCT_WARNING / 1000
+      )}`;
+    }
+    localCountdownState.active = false;
+    localCountdownState.paused = isPaused;
+  };
+
+  const triggerExplosion = () => {
+    if (doc.body) {
+      doc.body.classList.add("explode");
+      doc.body.classList.remove("paused");
+    }
+    if (pauseButton) {
+      pauseButton.disabled = true;
+      pauseButton.classList.remove("active");
+      pauseButton.textContent = "Autodestruct Complete";
+    }
+    state.completed = true;
+  };
+
+  const scheduleTimeline = () => {
+    schedulerInstance.schedule("introConfirm", confirmIntro, INTRO_CONFIRM_TIME);
+    schedulerInstance.schedule(
+      "introComplete",
+      unlockDossier,
+      INTRO_COMPLETE_TIME
+    );
+    schedulerInstance.schedule("countdown", beginCountdown, FUSE_DURATION);
+    schedulerInstance.schedule(
+      "explode",
+      triggerExplosion,
+      FUSE_DURATION + SELF_DESTRUCT_WARNING
+    );
+  };
+
+  const resetView = () => {
+    isPaused = false;
+    if (intro) {
+      intro.classList.remove("intro-complete", "confirmed");
+    }
+    if (doc.body) {
+      doc.body.classList.remove("show-dossier", "explode", "paused");
+    }
+    if (pauseButton) {
+      pauseButton.disabled = true;
+      pauseButton.classList.remove("active", "paused");
+      pauseButton.textContent = "Pause Autodestruct";
+      pauseButton.setAttribute("aria-pressed", "false");
+    }
+    if (selfDestructOverlay) {
+      selfDestructOverlay.classList.remove("visible");
+    }
+    localCountdownState.active = false;
+    localCountdownState.remainingMs = SELF_DESTRUCT_WARNING;
+    localCountdownState.paused = false;
+    localCountdownState.rafId = null;
+    localCountdownState.lastTimestamp = null;
+    if (countdownDisplay) {
+      countdownDisplay.textContent = `${Math.ceil(
+        SELF_DESTRUCT_WARNING / 1000
+      )}`;
+    }
+  };
+
+  return {
+    state,
+    start() {
+      resetView();
+      setFuseVariable();
+      scheduleTimeline();
+    },
+    pauseTimeline() {
+      if (state.paused || state.completed) {
+        return;
+      }
+      state.paused = true;
+      if (pauseButton) {
+        pauseButton.classList.add("paused");
+      }
+      togglePause(
+        pauseButton || doc.createElement("button"),
+        doc.body,
+        schedulerInstance,
+        localCountdownState
+      );
+      if (pauseButton) {
+        pauseButton.textContent = "Resume Autodestruct";
+      }
+    },
+    resumeTimeline() {
+      if (!state.paused || state.completed) {
+        return;
+      }
+      state.paused = false;
+      if (pauseButton) {
+        pauseButton.classList.remove("paused");
+      }
+      togglePause(
+        pauseButton || doc.createElement("button"),
+        doc.body,
+        schedulerInstance,
+        localCountdownState
+      );
+      if (pauseButton) {
+        pauseButton.textContent = "Pause Autodestruct";
+      }
+    },
+  };
+}
+
+const exportedConstants = {
+  INTRO_CONFIRM_TIME,
+  INTRO_COMPLETE_TIME,
+  FUSE_DURATION,
+  SELF_DESTRUCT_WARNING,
+};
+
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = {
+    createController,
+    createScheduler,
+    constants: exportedConstants,
+  };
 }
