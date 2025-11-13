@@ -1,7 +1,8 @@
 const INTRO_CONFIRM_TIME = 3400;
 const INTRO_COMPLETE_TIME = 5600;
-const FUSE_DURATION = 25000;
-const SELF_DESTRUCT_WARNING = 45000;
+const FUSE_DURATION = 45000;
+const SELF_DESTRUCT_WARNING = 5000;
+const POST_EXPLOSION_TRANSMISSION_DELAY = 3200;
 const DEFAULT_TYPE_SPEED = 20;
 const DEFAULT_FOCUS_HOLD = 900;
 
@@ -220,6 +221,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const liveMessageBody = liveMessage.querySelector(".message-body");
   const focusStage = document.getElementById("focus-stage");
   const focusContent = focusStage.querySelector(".focus-content");
+  const fuse = document.getElementById("fuse");
   const resetButton = document.getElementById("reset-timeline");
   const decryptionOverlay = document.getElementById("decryption-overlay");
   const decryptionStatus = document.getElementById("decryption-status");
@@ -259,6 +261,35 @@ document.addEventListener("DOMContentLoaded", () => {
     introText.textContent = "Identity Confirmed";
   }, INTRO_CONFIRM_TIME);
 
+  let transmissionReady = false;
+  let transmissionRequested = false;
+  let transmissionDisplayed = false;
+
+  const displayTransmission = () => {
+    if (transmissionDisplayed || !liveMessage || !liveMessageBody) {
+      return;
+    }
+
+    transmissionDisplayed = true;
+    showTransmission(liveMessage, liveMessageBody).catch(console.error);
+  };
+
+  const requestTransmissionDisplay = () => {
+    transmissionRequested = true;
+    if (!transmissionReady) {
+      return;
+    }
+
+    displayTransmission();
+  };
+
+  const markTransmissionReady = () => {
+    transmissionReady = true;
+    if (transmissionRequested && !transmissionDisplayed) {
+      displayTransmission();
+    }
+  };
+
   scheduler.schedule(
     "introComplete",
     () => {
@@ -269,7 +300,10 @@ document.addEventListener("DOMContentLoaded", () => {
         liveMessage,
         liveMessageBody,
         focusStage,
-        focusContent
+        focusContent,
+        {
+          onComplete: markTransmissionReady,
+        }
       ).catch(console.error);
     },
     INTRO_COMPLETE_TIME
@@ -278,7 +312,7 @@ document.addEventListener("DOMContentLoaded", () => {
   scheduler.schedule(
     "countdown",
     () => {
-      startCountdown(selfDestructOverlay);
+      startCountdown(selfDestructOverlay, countdownState, fuse);
     },
     FUSE_DURATION
   );
@@ -289,6 +323,14 @@ document.addEventListener("DOMContentLoaded", () => {
       body.classList.add("explode");
     },
     FUSE_DURATION + SELF_DESTRUCT_WARNING
+  );
+
+  scheduler.schedule(
+    "transmissionReveal",
+    () => {
+      requestTransmissionDisplay();
+    },
+    FUSE_DURATION + SELF_DESTRUCT_WARNING + POST_EXPLOSION_TRANSMISSION_DELAY
   );
 
   if (
@@ -407,10 +449,15 @@ async function runStreamSequence(
   liveMessage,
   messageBody,
   focusStage,
-  focusContent
+  focusContent,
+  options = {}
 ) {
+  const { onComplete } = options;
+
   if (!items.length) {
-    await showTransmission(liveMessage, messageBody);
+    if (typeof onComplete === "function") {
+      onComplete();
+    }
     return;
   }
 
@@ -493,7 +540,10 @@ async function runStreamSequence(
   }
 
   await controlledDelay(260);
-  await showTransmission(liveMessage, messageBody);
+
+  if (typeof onComplete === "function") {
+    onComplete();
+  }
 }
 
 async function showTransmission(container, messageBody) {
@@ -829,7 +879,11 @@ function togglePause(
   }
 }
 
-function startCountdown(overlay, state = countdownState) {
+function startCountdown(overlay, state = countdownState, fuseEl) {
+  if (fuseEl) {
+    fuseEl.classList.add("ignited");
+  }
+
   overlay.classList.add("visible");
   state.active = true;
   state.remainingMs = SELF_DESTRUCT_WARNING;
@@ -1005,6 +1059,9 @@ function createController(env = {}) {
     if (doc.body) {
       doc.body.classList.remove("show-dossier", "explode", "paused");
     }
+    if (fuse) {
+      fuse.classList.remove("ignited");
+    }
     if (pauseButton) {
       pauseButton.disabled = true;
       pauseButton.classList.remove("active", "paused");
@@ -1077,6 +1134,7 @@ const exportedConstants = {
   INTRO_COMPLETE_TIME,
   FUSE_DURATION,
   SELF_DESTRUCT_WARNING,
+  POST_EXPLOSION_TRANSMISSION_DELAY,
 };
 
 if (typeof module !== "undefined" && module.exports) {
