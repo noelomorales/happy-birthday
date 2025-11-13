@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "description": "Cinematic mission dossier birthday experience",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "generate:image-manifest": "node scripts/generate-image-manifest.js",
+    "postinstall": "npm run generate:image-manifest"
   },
   "devDependencies": {
     "jest": "^29.7.0",
