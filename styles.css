@@ -1358,13 +1358,19 @@ body.final-transmission::before {
   position: fixed;
   inset: 0;
   background:
-    linear-gradient(180deg, rgba(5, 7, 9, 0.78), rgba(5, 7, 9, 0.78)),
+    linear-gradient(180deg, rgba(5, 7, 9, 0.65), rgba(5, 7, 9, 0.65)),
     url("IMG_1476.jpeg") center/cover no-repeat;
-  filter: grayscale(100%) contrast(1.05);
-  opacity: 0.48;
+  filter: grayscale(22%) saturate(1.12) contrast(1.08);
+  opacity: 0.75;
   pointer-events: none;
   z-index: 88;
-  transition: opacity 0.6s ease;
+  transition: opacity 0.6s ease, filter 0.8s ease;
+}
+
+body.final-transmission #explosion {
+  opacity: 0;
+  transition: opacity 0.85s ease 0.2s;
+  pointer-events: none;
 }
 
 body.explode::after {
@@ -1815,10 +1821,10 @@ body.explode .smoke {
 
 .message-shell {
   position: relative;
-  background: linear-gradient(160deg, rgba(10, 13, 16, 0.95), rgba(12, 20, 24, 0.82));
+  background: linear-gradient(160deg, rgba(10, 13, 16, 0.78), rgba(12, 20, 24, 0.64));
   border: 2px solid rgba(198, 160, 69, 0.32);
-  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.55);
-  backdrop-filter: blur(6px);
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(10px);
   overflow: hidden;
 }
 
@@ -1856,10 +1862,10 @@ body.explode .smoke {
   padding: 1.4rem 1.35rem 1.7rem;
   font-size: 0.94rem;
   line-height: 1.7;
-  color: rgba(235, 233, 223, 0.88);
+  color: rgba(235, 233, 223, 0.9);
   white-space: pre-line;
-  background: linear-gradient(180deg, rgba(8, 12, 16, 0.75), rgba(14, 20, 26, 0.45));
-  box-shadow: inset 0 0 22px rgba(198, 160, 69, 0.12);
+  background: linear-gradient(180deg, rgba(8, 12, 16, 0.6), rgba(14, 20, 26, 0.32));
+  box-shadow: inset 0 0 22px rgba(198, 160, 69, 0.1);
 }
 
 .message-body::before {
