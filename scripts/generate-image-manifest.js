@@ -16,22 +16,45 @@ const allowedExtensions = new Set([
   ".avif",
 ]);
 
-function readImageDirectory() {
-  try {
-    return fs.readdirSync(imagesDir, { withFileTypes: true });
-  } catch (error) {
-    console.error(`Unable to read images directory at ${imagesDir}`);
-    throw error;
-  }
-}
-
 function collectImageFiles() {
-  return readImageDirectory()
-    .filter((entry) => entry.isFile())
-    .map((entry) => entry.name)
-    .filter((name) => name !== "manifest.json")
-    .filter((name) => allowedExtensions.has(path.extname(name).toLowerCase()))
-    .sort((a, b) => a.localeCompare(b, "en"));
+  const discoveredFiles = [];
+
+  function walk(currentDir, relativePath = "") {
+    let entries;
+    try {
+      entries = fs.readdirSync(currentDir, { withFileTypes: true });
+    } catch (error) {
+      console.error(`Unable to read images directory at ${currentDir}`);
+      throw error;
+    }
+
+    for (const entry of entries) {
+      if (entry.name === "manifest.json") {
+        continue;
+      }
+
+      const entryRelativePath = relativePath
+        ? path.join(relativePath, entry.name)
+        : entry.name;
+      const entryAbsolutePath = path.join(currentDir, entry.name);
+
+      if (entry.isDirectory()) {
+        walk(entryAbsolutePath, entryRelativePath);
+        continue;
+      }
+
+      if (
+        entry.isFile() &&
+        allowedExtensions.has(path.extname(entry.name).toLowerCase())
+      ) {
+        discoveredFiles.push(entryRelativePath.replace(/\\/g, "/"));
+      }
+    }
+  }
+
+  walk(imagesDir);
+
+  return discoveredFiles.sort((a, b) => a.localeCompare(b, "en"));
 }
 
 function createManifest(images) {
