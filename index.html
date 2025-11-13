@@ -120,7 +120,15 @@
             data-focus-mode="brief"
             data-focus-title="Current Location"
           >
-            Current Location: San Juan, Puerto Rico
+            Current Location:
+            <span
+              id="current-location"
+              data-locating-text="Triangulating coordinates…"
+              data-denied-text="Permission denied. Unable to confirm location."
+              data-unavailable-text="Location unavailable. Awaiting manual input."
+            >
+              Triangulating coordinates…
+            </span>
           </div>
         </div>
         <div class="overview-column dossier-media">
