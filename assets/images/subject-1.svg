@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="420" viewBox="0 0 640 420">
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0b192b" />
+      <stop offset="100%" stop-color="#102842" />
+    </linearGradient>
+    <filter id="noise">
+      <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" />
+      <feColorMatrix type="saturate" values="0" />
+      <feBlend mode="screen" in2="SourceGraphic" />
+    </filter>
+  </defs>
+  <rect width="640" height="420" fill="url(#g)" />
+  <rect width="620" height="400" x="10" y="10" fill="none" stroke="#ff0040" stroke-width="3" stroke-dasharray="12 12" opacity="0.7" />
+  <text x="50%" y="45%" font-size="42" font-family="'Share Tech Mono', monospace" fill="#ff335c" text-anchor="middle">IMAGE PLACEHOLDER</text>
+  <text x="50%" y="58%" font-size="24" font-family="'Share Tech Mono', monospace" fill="#f6f7f8" text-anchor="middle" opacity="0.75">Replace with mission photo</text>
+</svg>
