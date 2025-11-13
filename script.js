@@ -3,6 +3,7 @@ const INTRO_COMPLETE_TIME = 6200;
 const FUSE_DURATION = 25000;
 const SELF_DESTRUCT_WARNING = 5000;
 const DEFAULT_TYPE_SPEED = 32;
+const EXPLOSION_TO_DECRYPT_DELAY = 4200;
 
 document.documentElement.style.setProperty(
   "--fuse-duration",
@@ -32,6 +33,17 @@ document.addEventListener("DOMContentLoaded", () => {
   const pauseButton = document.getElementById("debug-pause");
   const liveMessage = document.getElementById("live-message");
   const liveMessageBody = liveMessage.querySelector(".message-body");
+  const decryptionOverlay = document.getElementById("decryption");
+  const decryptionStatus = decryptionOverlay
+    ? decryptionOverlay.querySelector(".decryption-status")
+    : null;
+  const decryptionLog = decryptionOverlay
+    ? decryptionOverlay.querySelector(".decryption-log")
+    : null;
+  const decryptionMessage = decryptionOverlay
+    ? decryptionOverlay.querySelector(".decryption-message")
+    : null;
+  const resetButton = document.getElementById("reset-timeline");
 
   countdownState.display = countdownEl;
 
@@ -42,6 +54,20 @@ document.addEventListener("DOMContentLoaded", () => {
   );
 
   prepareStreamItems(orderedStreamItems, liveMessageBody, liveMessage);
+
+  if (decryptionMessage) {
+    const fallbackText = extractText(decryptionMessage);
+    const finalMessageText =
+      liveMessageBody.dataset.streamText || fallbackText || "";
+    decryptionMessage.dataset.streamText = finalMessageText;
+    decryptionMessage.textContent = "";
+  }
+
+  if (resetButton) {
+    resetButton.addEventListener("click", () => {
+      window.location.reload();
+    });
+  }
 
   scheduler.schedule("introConfirm", () => {
     intro.classList.add("confirmed");
@@ -75,6 +101,27 @@ document.addEventListener("DOMContentLoaded", () => {
     },
     FUSE_DURATION + SELF_DESTRUCT_WARNING
   );
+
+  if (
+    decryptionOverlay &&
+    decryptionStatus &&
+    decryptionLog &&
+    decryptionMessage
+  ) {
+    scheduler.schedule(
+      "decrypt",
+      () => {
+        startDecryptionSequence({
+          overlay: decryptionOverlay,
+          statusEl: decryptionStatus,
+          logEl: decryptionLog,
+          messageEl: decryptionMessage,
+          body,
+        });
+      },
+      FUSE_DURATION + SELF_DESTRUCT_WARNING + EXPLOSION_TO_DECRYPT_DELAY
+    );
+  }
 
   pauseButton.addEventListener("click", () => {
     togglePause(pauseButton, body);
@@ -301,6 +348,242 @@ function togglePause(button, body) {
   }
 }
 
+function startDecryptionSequence({ overlay, statusEl, logEl, messageEl, body }) {
+  if (!overlay || !statusEl || !logEl || !messageEl) {
+    return;
+  }
+
+  overlay.classList.add("visible");
+  overlay.setAttribute("aria-hidden", "false");
+  logEl.innerHTML = "";
+
+  (async () => {
+    await controlledDelay(600);
+    statusEl.textContent = "Re-establishing secure channel...";
+    await controlledDelay(900);
+    statusEl.textContent = "Decrypting message...";
+    overlay.classList.add("decrypting");
+
+    const steps = [
+      "Initializing fallback cipher suite...",
+      "Routing through secure satellite uplink...",
+      "Payload integrity confirmed."
+    ];
+
+    for (const line of steps) {
+      await appendDecryptionLine(logEl, line, 26);
+      await controlledDelay(260);
+    }
+
+    statusEl.textContent = "Decryption complete.";
+    overlay.classList.add("message-ready");
+    await controlledDelay(480);
+
+    await typeText(messageEl, messageEl.dataset.streamText || "", 26);
+    await controlledDelay(540);
+    body.classList.add("highlight-map");
+  })().catch(console.error);
+}
+
+async function appendDecryptionLine(container, text, speed = 24) {
+  const line = document.createElement("p");
+  line.className = "log-line";
+  container.appendChild(line);
+  await typeText(line, text, speed);
+  line.classList.add("complete");
+}
+
+function createTimerController(perf, timersApi) {
+  const scheduled = new Map();
+
+  const schedule = (name, callback, delay) => {
+    const timer = {
+      name,
+      callback,
+      remaining: delay,
+      start: perf.now(),
+      id: null,
+    };
+
+    timer.id = timersApi.setTimeout(() => {
+      scheduled.delete(name);
+      callback();
+    }, delay);
+
+    scheduled.set(name, timer);
+    return timer;
+  };
+
+  const pauseAll = () => {
+    scheduled.forEach((timer) => {
+      timersApi.clearTimeout(timer.id);
+      const elapsed = Math.max(perf.now() - timer.start, 0);
+      timer.remaining = Math.max(timer.remaining - elapsed, 0);
+    });
+  };
+
+  const resumeAll = () => {
+    scheduled.forEach((timer, name) => {
+      if (timer.remaining <= 0) {
+        scheduled.delete(name);
+        timer.callback();
+        return;
+      }
+
+      timer.start = perf.now();
+      timer.id = timersApi.setTimeout(() => {
+        scheduled.delete(name);
+        timer.callback();
+      }, timer.remaining);
+    });
+  };
+
+  const clear = () => {
+    scheduled.forEach((timer) => timersApi.clearTimeout(timer.id));
+    scheduled.clear();
+  };
+
+  return { schedule, pauseAll, resumeAll, clear };
+}
+
+function createController({ document, performance: perf, timers }) {
+  const state = { paused: false };
+  const body = document.body;
+  const html = document.documentElement;
+  const intro = document.getElementById("intro");
+  const introText = intro ? intro.querySelector(".intro-text") : null;
+  const selfDestructOverlay = document.getElementById("self-destruct");
+  const countdownEl = selfDestructOverlay
+    ? selfDestructOverlay.querySelector(".self-destruct-countdown")
+    : null;
+  const pauseButton = document.getElementById("pause-toggle");
+
+  const timerController = createTimerController(perf, timers);
+  let introFinished = false;
+  let exploded = false;
+
+  const updateFuseVariable = () => {
+    html.style.setProperty("--fuse-duration", `${FUSE_DURATION}ms`);
+  };
+
+  const runIntroComplete = () => {
+    if (intro) {
+      intro.classList.add("intro-complete");
+    }
+    body.classList.add("show-dossier");
+    introFinished = true;
+    if (pauseButton) {
+      pauseButton.disabled = false;
+      pauseButton.classList.add("active");
+      pauseButton.textContent = "Pause Autodestruct";
+    }
+  };
+
+  const runCountdown = () => {
+    if (selfDestructOverlay) {
+      selfDestructOverlay.classList.add("visible");
+    }
+    if (countdownEl) {
+      countdownEl.textContent = String(
+        Math.ceil(SELF_DESTRUCT_WARNING / 1000)
+      );
+    }
+  };
+
+  const runExplosion = () => {
+    body.classList.add("explode");
+    if (pauseButton) {
+      pauseButton.disabled = true;
+      pauseButton.textContent = "Autodestruct Complete";
+    }
+    exploded = true;
+  };
+
+  const schedulePostIntro = () => {
+    exploded = false;
+    timerController.schedule("countdown", runCountdown, FUSE_DURATION);
+    timerController.schedule(
+      "explode",
+      runExplosion,
+      FUSE_DURATION + SELF_DESTRUCT_WARNING
+    );
+  };
+
+  const start = () => {
+    introFinished = false;
+    exploded = false;
+    updateFuseVariable();
+
+    if (pauseButton) {
+      pauseButton.disabled = true;
+      pauseButton.classList.add("active");
+      pauseButton.textContent = "Pause Autodestruct";
+    }
+
+    if (introText) {
+      introText.textContent = "Initializing...";
+    }
+
+    timerController.schedule("introComplete", () => {
+      runIntroComplete();
+      if (!state.paused) {
+        schedulePostIntro();
+      }
+    }, INTRO_COMPLETE_TIME);
+  };
+
+  const pauseTimeline = () => {
+    if (state.paused) {
+      return;
+    }
+    state.paused = true;
+    body.classList.add("paused");
+    timerController.clear();
+    if (!exploded && selfDestructOverlay) {
+      selfDestructOverlay.classList.remove("visible");
+    }
+    if (!exploded) {
+      body.classList.remove("explode");
+    }
+    if (pauseButton) {
+      pauseButton.textContent = "Resume Autodestruct";
+    }
+  };
+
+  const resumeTimeline = () => {
+    if (!state.paused) {
+      return;
+    }
+    state.paused = false;
+    body.classList.remove("paused");
+    if (pauseButton) {
+      pauseButton.textContent = "Pause Autodestruct";
+      pauseButton.disabled = false;
+    }
+
+    if (!introFinished) {
+      timerController.schedule("introComplete", () => {
+        runIntroComplete();
+        if (!state.paused) {
+          schedulePostIntro();
+        }
+      }, INTRO_COMPLETE_TIME);
+      return;
+    }
+
+    if (!exploded) {
+      schedulePostIntro();
+    }
+  };
+
+  return {
+    start,
+    pauseTimeline,
+    resumeTimeline,
+    state,
+  };
+}
+
 function startCountdown(overlay) {
   overlay.classList.add("visible");
   countdownState.active = true;
@@ -349,4 +632,17 @@ function updateCountdown(timestamp, state) {
   }
 
   state.rafId = requestAnimationFrame((next) => updateCountdown(next, state));
+}
+
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = {
+    createController,
+    constants: {
+      INTRO_CONFIRM_TIME,
+      INTRO_COMPLETE_TIME,
+      FUSE_DURATION,
+      SELF_DESTRUCT_WARNING,
+      EXPLOSION_TO_DECRYPT_DELAY,
+    },
+  };
 }
