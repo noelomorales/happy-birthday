@@ -4,6 +4,8 @@ const FUSE_DURATION = 25000;
 const SELF_DESTRUCT_WARNING = 5000;
 const DEFAULT_TYPE_SPEED = 32;
 const DEFAULT_FOCUS_HOLD = 1200;
+const IMAGE_MANIFEST_URL = "assets/images/manifest.json";
+const IMAGE_QUEUE_STORAGE_KEY = "hb:image-rotation";
 
 document.documentElement.style.setProperty(
   "--fuse-duration",
@@ -21,6 +23,191 @@ const countdownState = {
   lastTimestamp: null,
   display: null,
 };
+
+async function assignRandomDossierImages() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const imageTargets = Array.from(
+    document.querySelectorAll(".photo-card img[data-random-image]")
+  );
+
+  if (!imageTargets.length) {
+    return;
+  }
+
+  try {
+    const manifest = await loadImageManifest();
+    if (!manifest.images.length) {
+      return;
+    }
+
+    const selections = selectImagesFromManifest(manifest, imageTargets.length);
+    selections.forEach((src, index) => {
+      const target = imageTargets[index];
+      if (target && typeof src === "string" && src.length > 0) {
+        updateImageSource(target, src);
+      }
+    });
+  } catch (error) {
+    console.error("Unable to randomize dossier imagery", error);
+  }
+}
+
+async function loadImageManifest() {
+  const response = await fetch(IMAGE_MANIFEST_URL, {
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to load image manifest: ${response.status}`);
+  }
+
+  const payload = await response.json();
+  const fileList = Array.isArray(payload?.images)
+    ? payload.images
+    : Array.isArray(payload)
+      ? payload
+      : [];
+
+  const cleaned = sanitizeManifestList(fileList);
+  const version = String(
+    (typeof payload?.version === "string" && payload.version) ||
+      payload?.generatedAt ||
+      payload?.updatedAt ||
+      cleaned.join("|") ||
+      "0"
+  );
+
+  return {
+    images: cleaned,
+    version,
+  };
+}
+
+function sanitizeManifestList(fileList) {
+  const seen = new Set();
+
+  return fileList
+    .map((entry) => (typeof entry === "string" ? entry.trim() : ""))
+    .filter((entry) => entry.length > 0)
+    .map((entry) =>
+      entry.startsWith("assets/") ? entry : `assets/images/${entry}`
+    )
+    .filter((entry) => {
+      if (seen.has(entry)) {
+        return false;
+      }
+      seen.add(entry);
+      return true;
+    });
+}
+
+function selectImagesFromManifest(manifest, count) {
+  if (!manifest.images.length || count <= 0) {
+    return [];
+  }
+
+  const storage = getLocalStorage();
+  const storedQueue = readStoredQueue(storage, manifest.version, manifest.images);
+  const workingQueue = storedQueue.length
+    ? [...storedQueue]
+    : shuffleArray(manifest.images.slice());
+  const selections = [];
+
+  while (selections.length < count && manifest.images.length) {
+    if (!workingQueue.length) {
+      workingQueue.push(...shuffleArray(manifest.images.slice()));
+    }
+
+    const next = workingQueue.shift();
+    if (typeof next === "string" && next.length > 0) {
+      selections.push(next);
+    }
+  }
+
+  persistQueue(storage, workingQueue, manifest.version);
+
+  return selections;
+}
+
+function getLocalStorage() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    const { localStorage } = window;
+    const testKey = "__hb-storage-test__";
+    localStorage.setItem(testKey, testKey);
+    localStorage.removeItem(testKey);
+    return localStorage;
+  } catch (error) {
+    return null;
+  }
+}
+
+function readStoredQueue(storage, version, allowedImages) {
+  if (!storage) {
+    return [];
+  }
+
+  try {
+    const raw = storage.getItem(IMAGE_QUEUE_STORAGE_KEY);
+    if (!raw) {
+      return [];
+    }
+
+    const parsed = JSON.parse(raw);
+    if (parsed?.version !== version || !Array.isArray(parsed?.queue)) {
+      return [];
+    }
+
+    const allowed = new Set(allowedImages);
+    return parsed.queue.filter(
+      (entry) => typeof entry === "string" && allowed.has(entry)
+    );
+  } catch (error) {
+    return [];
+  }
+}
+
+function persistQueue(storage, queue, version) {
+  if (!storage) {
+    return;
+  }
+
+  try {
+    storage.setItem(
+      IMAGE_QUEUE_STORAGE_KEY,
+      JSON.stringify({ version, queue })
+    );
+  } catch (error) {
+    // Fail silently; rotation will reset on next load if persistence is unavailable.
+  }
+}
+
+function shuffleArray(values) {
+  const array = values.slice();
+
+  for (let i = array.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+
+  return array;
+}
+
+function updateImageSource(img, src) {
+  const currentSrc = img.getAttribute("src");
+  if (currentSrc === src) {
+    return;
+  }
+
+  img.setAttribute("src", src);
+  img.dataset.randomizedSrc = src;
+}
 
 document.addEventListener("DOMContentLoaded", () => {
   const body = document.body;
@@ -42,6 +229,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const decryptionMessage = document.getElementById("decryption-message");
   const hasDecryptionSequence =
     typeof startDecryptionSequence === "function";
+
+  assignRandomDossierImages();
 
   countdownState.display = countdownEl;
 
