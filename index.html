@@ -15,11 +15,26 @@
   <body>
     <div id="intro" class="active">
       <div class="intro-content">
-        <div class="scan-mask">
-          <div class="scan-line"></div>
+        <div class="biometric-frame" aria-hidden="true">
+          <div class="retina-ring primary"></div>
+          <div class="retina-ring secondary"></div>
+          <div class="retina-glimmer"></div>
+          <div class="mesh-grid"></div>
+          <div class="scan-orb"></div>
+          <div class="scan-sweep"></div>
+          <div class="signature-points">
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
         </div>
-        <p class="intro-text" aria-live="polite">Initializing...</p>
-        <p class="intro-subtext">Secure Channel G-7 • Encryption Active</p>
+        <div class="intro-readout">
+          <p class="intro-text" aria-live="polite">Initializing...</p>
+          <p class="intro-subtext">Biometric Handshake • Facial + Retinal Match Pending</p>
+        </div>
       </div>
     </div>
 
@@ -32,7 +47,7 @@
         <p class="self-destruct-heading">!!! ALERT !!!</p>
         <p>
           This message will self-destruct in
-          <span class="self-destruct-countdown">5</span> seconds.
+          <span class="self-destruct-countdown">45</span> seconds.
         </p>
       </div>
     </div>
@@ -103,6 +118,7 @@
             data-stream-speed="30"
             data-focus-mode="brief"
             data-focus-title="Operational Snapshot"
+            data-focus-image="assets/images/subject-1.svg"
           >
             A highly decorated operative with an impeccable record of living la
             vida loca. Armed, and very dangerous. Known to karaoke at all hours
