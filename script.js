@@ -46,6 +46,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
   prepareStreamItems(orderedStreamItems, liveMessageBody, liveMessage);
 
+  if (decryptionMessage) {
+    const fallbackText = extractText(decryptionMessage);
+    const finalMessageText =
+      liveMessageBody.dataset.streamText || fallbackText || "";
+    decryptionMessage.dataset.streamText = finalMessageText;
+    decryptionMessage.textContent = "";
+  }
+
+  if (resetButton) {
+    resetButton.addEventListener("click", () => {
+      window.location.reload();
+    });
+  }
+
   scheduler.schedule("introConfirm", () => {
     intro.classList.add("confirmed");
     introText.textContent = "Identity Confirmed";
@@ -82,6 +96,27 @@ document.addEventListener("DOMContentLoaded", () => {
     },
     FUSE_DURATION + SELF_DESTRUCT_WARNING
   );
+
+  if (
+    decryptionOverlay &&
+    decryptionStatus &&
+    decryptionLog &&
+    decryptionMessage
+  ) {
+    scheduler.schedule(
+      "decrypt",
+      () => {
+        startDecryptionSequence({
+          overlay: decryptionOverlay,
+          statusEl: decryptionStatus,
+          logEl: decryptionLog,
+          messageEl: decryptionMessage,
+          body,
+        });
+      },
+      FUSE_DURATION + SELF_DESTRUCT_WARNING + EXPLOSION_TO_DECRYPT_DELAY
+    );
+  }
 
   pauseButton.addEventListener("click", () => {
     togglePause(pauseButton, body);
