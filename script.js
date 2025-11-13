@@ -59,6 +59,8 @@ const DEFAULT_POSITION_OPTIONS = Object.freeze({
   maximumAge: 300000,
 });
 
+const PRESERVED_CHILDREN = new WeakMap();
+
 function formatCoordinate(value, positiveSuffix, negativeSuffix) {
   const numeric = Number(value);
   if (!Number.isFinite(numeric)) {
@@ -216,6 +218,21 @@ function initializeGeolocation(options = {}) {
     messages.unavailable
   );
 
+  const hostElement = element.parentElement;
+  const initialSibling = element.nextSibling;
+
+  const ensureAttached = () => {
+    if (element.isConnected || !hostElement) {
+      return;
+    }
+
+    if (initialSibling && initialSibling.parentNode === hostElement) {
+      hostElement.insertBefore(element, initialSibling);
+    } else {
+      hostElement.appendChild(element);
+    }
+  };
+
   const ensureMessage = (state, message) => {
     if (typeof message === "string") {
       const trimmed = message.trim();
@@ -256,6 +273,8 @@ function initializeGeolocation(options = {}) {
   };
 
   const applyState = (state, message) => {
+    ensureAttached();
+
     const finalMessage = ensureMessage(state, message);
     element.dataset.state = state;
     element.textContent = finalMessage;
@@ -1273,7 +1292,30 @@ function prepareStreamItems(items, messageBody, messageContainer) {
     item.classList.remove("module-online");
 
     if (type === "text") {
-      const content = extractText(item);
+      const preserved = Array.from(
+        item.querySelectorAll("[data-preserve-node]")
+      );
+
+      if (preserved.length) {
+        PRESERVED_CHILDREN.set(item, preserved);
+      } else {
+        PRESERVED_CHILDREN.delete(item);
+      }
+
+      let content;
+
+      if (preserved.length) {
+        const clone = item.cloneNode(true);
+        const clonePreserved = clone.querySelectorAll("[data-preserve-node]");
+        clonePreserved.forEach((node) => node.remove());
+        content = extractText(clone);
+        if (content.length && !/\s$/.test(content)) {
+          content += " ";
+        }
+      } else {
+        content = extractText(item);
+      }
+
       item.dataset.streamText = content;
       item.textContent = "";
     }
@@ -1333,10 +1375,12 @@ async function runStreamSequence(
       });
     }
 
+    const preservedNodes = PRESERVED_CHILDREN.get(primary) || [];
     const typingPromise = typeText(
       primary,
       textContent,
-      accelerateSpeed(baseSpeed, 0.58)
+      accelerateSpeed(baseSpeed, 0.58),
+      { preservedNodes }
     );
     primary.classList.add("pinned");
 
@@ -1474,7 +1518,10 @@ async function startCascade(
         });
       }
 
-      await typeText(item, textContent, accelerateSpeed(baseSpeed, speedFactor));
+      const preservedNodes = PRESERVED_CHILDREN.get(item) || [];
+      await typeText(item, textContent, accelerateSpeed(baseSpeed, speedFactor), {
+        preservedNodes,
+      });
       item.classList.add("pinned");
       await controlledDelay(100);
       await controlledDelay(betweenDelay);
@@ -1627,7 +1674,7 @@ function extractText(element) {
   return cleaned.join("\n");
 }
 
-async function typeText(element, text, speed) {
+async function typeText(element, text, speed, options = {}) {
   element.classList.add("typing");
   if (element.classList.contains("stream-item")) {
     element.classList.add("active");
@@ -1654,6 +1701,24 @@ async function typeText(element, text, speed) {
 
     currentNode.data += char;
     await controlledDelay(step);
+  }
+
+  const preservedNodes = Array.isArray(options.preservedNodes)
+    ? options.preservedNodes
+    : [];
+
+  if (preservedNodes.length) {
+    const needsSpace =
+      element.textContent.length && !/\s$/.test(element.textContent);
+    if (needsSpace) {
+      element.appendChild(document.createTextNode(" "));
+    }
+
+    preservedNodes.forEach((node) => {
+      if (node && !node.isConnected) {
+        element.appendChild(node);
+      }
+    });
   }
 
   element.classList.remove("typing");

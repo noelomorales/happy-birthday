@@ -130,4 +130,34 @@ describe("initializeGeolocation", () => {
     expect(element.dataset.state).toBe(locationState.resolved);
     expect(element.textContent).toBe(expected);
   });
+
+  test("restores location element if it is removed during resolution", async () => {
+    const {
+      initializeGeolocation,
+      locationState,
+    } = require("../script.js");
+
+    const wrapper = document.createElement("div");
+    wrapper.textContent = "Current Location:";
+    document.body.appendChild(wrapper);
+
+    const element = buildLocationElement();
+    wrapper.appendChild(element);
+
+    const geolocation = {
+      getCurrentPosition: (success) => {
+        element.remove();
+        success({
+          coords: { latitude: 12.34, longitude: 56.78 },
+        });
+      },
+    };
+
+    const controller = initializeGeolocation({ element, geolocation });
+    const result = await controller.ready;
+
+    expect(result.state).toBe(locationState.resolved);
+    expect(element.isConnected).toBe(true);
+    expect(element.dataset.state).toBe(locationState.resolved);
+  });
 });
