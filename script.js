@@ -39,6 +39,302 @@ const MAP_LOCATION_URL =
   (typeof window !== "undefined" && window.MAP_LOCATION_URL) ||
   "https://maps.google.com/?q=3141+Mission+St,+San+Francisco,+CA+94110";
 
+const LOCATION_STATE = Object.freeze({
+  locating: "locating",
+  denied: "denied",
+  unavailable: "unavailable",
+  resolved: "resolved",
+  cancelled: "cancelled",
+});
+
+const DEFAULT_LOCATION_MESSAGES = Object.freeze({
+  locating: "Triangulating coordinates…",
+  denied: "Permission denied. Unable to confirm location.",
+  unavailable: "Location unavailable. Awaiting manual input.",
+});
+
+const DEFAULT_POSITION_OPTIONS = Object.freeze({
+  enableHighAccuracy: false,
+  timeout: 15000,
+  maximumAge: 300000,
+});
+
+function formatCoordinate(value, positiveSuffix, negativeSuffix) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) {
+    return null;
+  }
+
+  const suffix = numeric >= 0 ? positiveSuffix : negativeSuffix;
+  const magnitude = Math.abs(numeric).toFixed(3);
+  return `${magnitude}° ${suffix}`;
+}
+
+function formatCoordinates(latitude, longitude) {
+  const latPart = formatCoordinate(latitude, "N", "S");
+  const lonPart = formatCoordinate(longitude, "E", "W");
+
+  if (!latPart || !lonPart) {
+    return "";
+  }
+
+  return `${latPart}, ${lonPart}`;
+}
+
+function resolveDatasetMessage(element, key, fallback) {
+  if (!element || !element.dataset) {
+    return fallback;
+  }
+
+  const datasetKey = `${key}Text`;
+  const value = element.dataset[datasetKey];
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (trimmed.length > 0) {
+      return trimmed;
+    }
+  }
+
+  return fallback;
+}
+
+function shouldTreatAsDenied(error) {
+  if (!error) {
+    return false;
+  }
+
+  const code = error.code;
+  const deniedCode =
+    typeof error.PERMISSION_DENIED === "number"
+      ? error.PERMISSION_DENIED
+      : 1;
+
+  if (code === deniedCode || code === String(deniedCode)) {
+    return true;
+  }
+
+  if (typeof error.message === "string") {
+    return /denied/i.test(error.message);
+  }
+
+  return false;
+}
+
+async function resolvePositionLabel(coords, reverseGeocode, fallbackMessage) {
+  if (!coords) {
+    return fallbackMessage;
+  }
+
+  const payload = {
+    latitude: coords.latitude,
+    longitude: coords.longitude,
+  };
+
+  if (typeof reverseGeocode === "function") {
+    try {
+      const label = await reverseGeocode(payload);
+      if (typeof label === "string") {
+        const trimmed = label.trim();
+        if (trimmed.length > 0) {
+          return trimmed;
+        }
+      }
+    } catch (error) {
+      console.warn("Reverse geocoding failed", error);
+    }
+  }
+
+  const formatted = formatCoordinates(payload.latitude, payload.longitude);
+  if (formatted && formatted.length > 0) {
+    return formatted;
+  }
+
+  return fallbackMessage;
+}
+
+function initializeGeolocation(options = {}) {
+  const doc =
+    options.document || (typeof document !== "undefined" ? document : null);
+  const element =
+    options.element ||
+    (doc && typeof doc.getElementById === "function"
+      ? doc.getElementById("current-location")
+      : null);
+
+  const navigatorGeolocation =
+    typeof navigator !== "undefined" ? navigator.geolocation : null;
+  const geolocation =
+    options.geolocation &&
+    typeof options.geolocation.getCurrentPosition === "function"
+      ? options.geolocation
+      : navigatorGeolocation;
+
+  let reverseGeocode =
+    typeof options.reverseGeocode === "function"
+      ? options.reverseGeocode
+      : null;
+
+  if (!reverseGeocode && typeof window !== "undefined") {
+    const candidate = window.resolveAgentLocation;
+    if (typeof candidate === "function") {
+      reverseGeocode = candidate;
+    }
+  }
+
+  if (!element) {
+    return {
+      ready: Promise.resolve({ state: LOCATION_STATE.unavailable, message: "" }),
+      cancel() {},
+    };
+  }
+
+  if (!element.hasAttribute("aria-live")) {
+    element.setAttribute("aria-live", "polite");
+  }
+
+  const messages = {
+    locating: resolveDatasetMessage(
+      element,
+      "locating",
+      DEFAULT_LOCATION_MESSAGES.locating
+    ),
+    denied: resolveDatasetMessage(
+      element,
+      "denied",
+      DEFAULT_LOCATION_MESSAGES.denied
+    ),
+    unavailable: resolveDatasetMessage(
+      element,
+      "unavailable",
+      DEFAULT_LOCATION_MESSAGES.unavailable
+    ),
+  };
+
+  const fallbackMessage = resolveDatasetMessage(
+    element,
+    "fallback",
+    messages.unavailable
+  );
+
+  const ensureMessage = (state, message) => {
+    if (typeof message === "string") {
+      const trimmed = message.trim();
+      if (trimmed.length > 0) {
+        return trimmed;
+      }
+    }
+
+    if (state === LOCATION_STATE.locating) {
+      return messages.locating;
+    }
+    if (state === LOCATION_STATE.denied) {
+      return messages.denied;
+    }
+    if (state === LOCATION_STATE.unavailable) {
+      return messages.unavailable;
+    }
+
+    return fallbackMessage;
+  };
+
+  let readyResolver;
+  let settled = false;
+  let cancelled = false;
+
+  const ready = new Promise((resolve) => {
+    readyResolver = resolve;
+  });
+
+  const finalize = (payload) => {
+    if (settled) {
+      return;
+    }
+    settled = true;
+    if (readyResolver) {
+      readyResolver(payload);
+    }
+  };
+
+  const applyState = (state, message) => {
+    const finalMessage = ensureMessage(state, message);
+    element.dataset.state = state;
+    element.textContent = finalMessage;
+
+    if (typeof options.onStateChange === "function") {
+      options.onStateChange({ state, message: finalMessage });
+    }
+
+    return finalMessage;
+  };
+
+  applyState(LOCATION_STATE.locating, messages.locating);
+
+  if (!geolocation || typeof geolocation.getCurrentPosition !== "function") {
+    const message = applyState(LOCATION_STATE.unavailable, fallbackMessage);
+    finalize({ state: LOCATION_STATE.unavailable, message });
+    return {
+      ready,
+      cancel() {
+        cancelled = true;
+      },
+    };
+  }
+
+  const handleSuccess = async (position) => {
+    if (cancelled) {
+      return;
+    }
+
+    const coords = position && position.coords ? position.coords : null;
+    const label = await resolvePositionLabel(coords, reverseGeocode, fallbackMessage);
+    const message = applyState(LOCATION_STATE.resolved, label);
+    finalize({ state: LOCATION_STATE.resolved, message, coords });
+  };
+
+  const handleError = (error) => {
+    if (cancelled) {
+      return;
+    }
+
+    const denied = shouldTreatAsDenied(error);
+    const state = denied ? LOCATION_STATE.denied : LOCATION_STATE.unavailable;
+    const message = applyState(
+      state,
+      denied ? messages.denied : fallbackMessage
+    );
+    finalize({ state, message, error });
+  };
+
+  const positionOptions = {
+    ...DEFAULT_POSITION_OPTIONS,
+    ...(options.positionOptions || {}),
+  };
+
+  try {
+    geolocation.getCurrentPosition(
+      handleSuccess,
+      handleError,
+      positionOptions
+    );
+  } catch (error) {
+    console.error("Geolocation request failed", error);
+    handleError(error);
+  }
+
+  return {
+    ready,
+    cancel() {
+      if (!cancelled) {
+        cancelled = true;
+        finalize({
+          state: LOCATION_STATE.cancelled,
+          message: element.textContent.trim(),
+        });
+      }
+    },
+  };
+}
+
 document.documentElement.style.setProperty(
   "--fuse-duration",
   `${FUSE_DURATION}ms`
@@ -354,6 +650,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ".self-destruct-countdown"
   );
   const pauseButton = document.getElementById("debug-pause");
+  const currentLocationElement = document.getElementById("current-location");
   const liveMessage = document.getElementById("live-message");
   const liveMessageBody = liveMessage.querySelector(".message-body");
   const focusStage = document.getElementById("focus-stage");
@@ -418,6 +715,10 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   assignRandomDossierImages();
+
+  if (currentLocationElement) {
+    initializeGeolocation({ element: currentLocationElement });
+  }
 
   countdownState.display = countdownEl;
 
@@ -1703,5 +2004,9 @@ if (typeof module !== "undefined" && module.exports) {
     createController,
     createScheduler,
     constants: exportedConstants,
+    initializeGeolocation,
+    formatCoordinates,
+    locationMessages: DEFAULT_LOCATION_MESSAGES,
+    locationState: LOCATION_STATE,
   };
 }
