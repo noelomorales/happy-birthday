@@ -617,6 +617,10 @@ function prepareStreamItems(items, messageBody, messageContainer) {
   messageBody.dataset.streamText = messageText;
   messageBody.textContent = "";
   messageContainer.classList.remove("visible");
+
+  if (typeof document !== "undefined" && document.body) {
+    document.body.classList.remove("final-transmission");
+  }
 }
 
 async function runStreamSequence(
@@ -726,6 +730,10 @@ async function runStreamSequence(
 }
 
 async function showTransmission(container, messageBody) {
+  if (typeof document !== "undefined" && document.body) {
+    document.body.classList.add("final-transmission");
+  }
+
   container.classList.add("visible");
   await controlledDelay(220);
   await typeText(messageBody, messageBody.dataset.streamText || "", 20);
@@ -1243,7 +1251,12 @@ function createController(env = {}) {
       intro.classList.remove("intro-complete", "confirmed", "scanning");
     }
     if (doc.body) {
-      doc.body.classList.remove("show-dossier", "explode", "paused");
+      doc.body.classList.remove(
+        "show-dossier",
+        "explode",
+        "paused",
+        "final-transmission"
+      );
     }
     if (fuse) {
       fuse.classList.remove("ignited");
