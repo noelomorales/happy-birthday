@@ -671,7 +671,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const pauseButton = document.getElementById("debug-pause");
   const currentLocationElement = document.getElementById("current-location");
   const liveMessage = document.getElementById("live-message");
-  const liveMessageBody = liveMessage.querySelector(".message-body");
+  const liveMessageBody = liveMessage
+    ? liveMessage.querySelector(".message-body")
+    : null;
   const closeTransmissionButton = liveMessage
     ? liveMessage.querySelector("[data-close-transmission]")
     : null;
@@ -827,7 +829,9 @@ document.addEventListener("DOMContentLoaded", () => {
   if (decryptionMessage) {
     const fallbackText = extractText(decryptionMessage);
     const finalMessageText =
-      liveMessageBody.dataset.streamText || fallbackText || "";
+      (liveMessageBody && liveMessageBody.dataset.streamText) ||
+      fallbackText ||
+      "";
     decryptionMessage.dataset.streamText = finalMessageText;
     decryptionMessage.textContent = "";
   }
@@ -1321,13 +1325,15 @@ function prepareStreamItems(items, messageBody, messageContainer) {
     }
   });
 
-  const messageText = extractText(messageBody);
-  messageBody.dataset.streamText = messageText;
-  messageBody.textContent = "";
-  messageContainer.classList.remove("visible", "docked");
+  if (messageBody && messageContainer) {
+    const messageText = extractText(messageBody);
+    messageBody.dataset.streamText = messageText;
+    messageBody.textContent = "";
+    messageContainer.classList.remove("visible", "docked");
 
-  if (typeof document !== "undefined" && document.body) {
-    document.body.classList.remove("final-transmission");
+    if (typeof document !== "undefined" && document.body) {
+      document.body.classList.remove("final-transmission");
+    }
   }
 }
 
