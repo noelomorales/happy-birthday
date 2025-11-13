@@ -13,40 +13,18 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <div id="intro" class="active">
-      <div class="intro-content">
-        <div class="biometric-frame" aria-hidden="true">
-          <div class="retina-ring primary"></div>
-          <div class="retina-ring secondary"></div>
-          <div class="retina-glimmer"></div>
-          <div class="mesh-grid"></div>
-          <div class="retina-marker-ring" aria-hidden="true"></div>
-          <div class="scan-lines" aria-hidden="true">
-            <span></span>
-            <span></span>
-            <span></span>
-            <span></span>
-            <span></span>
-            <span></span>
-          </div>
-          <div class="scan-beam" aria-hidden="true"></div>
-          <div class="scan-orb"></div>
-          <div class="scan-sweep"></div>
-          <div class="signature-points">
-            <span></span>
-            <span></span>
-            <span></span>
-            <span></span>
-            <span></span>
-            <span></span>
-            <span></span>
-            <span></span>
-            <span></span>
-          </div>
+    <div id="intro" class="active" aria-live="polite">
+      <div class="scan-field" aria-hidden="true">
+        <div class="scan-beam"></div>
+      </div>
+      <div class="intro-terminal" role="presentation">
+        <div class="terminal-header">GALACTIC FEDERATION // ACCESS NODE 7</div>
+        <div class="terminal-body">
+          <pre class="terminal-log" role="log" aria-live="polite"></pre>
         </div>
-        <div class="intro-readout">
-          <p class="intro-text" aria-live="polite">Initializing...</p>
-          <p class="intro-subtext">Biometric Handshake • Facial + Retinal Match Pending</p>
+        <div class="terminal-status">
+          <p class="intro-text">Stabilizing subspace handshake...</p>
+          <p class="intro-subtext">Routing through secure relays</p>
         </div>
       </div>
     </div>
