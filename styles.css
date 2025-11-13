@@ -407,32 +407,38 @@ body.show-dossier main#dossier {
 
 .dossier-media {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: clamp(1rem, 3vw, 1.5rem);
+  align-items: stretch;
 }
 
 .photo-card {
   background: rgba(9, 12, 16, 0.8);
   border: 1px solid rgba(198, 160, 69, 0.28);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
-  padding: 1rem;
+  padding: clamp(0.9rem, 2.5vw, 1.25rem);
   position: relative;
   display: flex;
   flex-direction: column;
   gap: 0.8rem;
+  border-radius: 10px;
 }
 
 .photo-card::after {
   content: attr(data-label);
   position: absolute;
-  top: 10px;
-  left: 10px;
+  top: clamp(0.55rem, 2vw, 0.85rem);
+  left: clamp(0.55rem, 2vw, 0.85rem);
+  right: clamp(0.55rem, 2vw, 0.85rem);
   background: rgba(6, 8, 10, 0.7);
-  padding: 0.3rem 0.6rem;
-  font-size: 0.7rem;
-  letter-spacing: 0.2rem;
+  padding: clamp(0.25rem, 1.2vw, 0.45rem) clamp(0.55rem, 2vw, 0.85rem);
+  font-size: clamp(0.6rem, 1.9vw, 0.75rem);
+  letter-spacing: clamp(0.12rem, 1.8vw, 0.22rem);
   color: rgba(239, 224, 195, 0.85);
   text-transform: uppercase;
+  line-height: 1.35;
+  white-space: normal;
+  word-break: break-word;
 }
 
 .photo-card img {
@@ -444,6 +450,7 @@ body.show-dossier main#dossier {
   background: rgba(8, 10, 12, 0.45);
   aspect-ratio: 4 / 3;
   object-fit: cover;
+  border-radius: 6px;
 }
 
 .stream-item {
@@ -1825,20 +1832,22 @@ body.explode .smoke {
 .message-shell::before {
   content: "SECURE CHAT";
   position: absolute;
-  top: 0.65rem;
-  right: 1.1rem;
-  font-size: 0.6rem;
-  letter-spacing: 0.36rem;
+  top: clamp(0.6rem, 2vw, 0.85rem);
+  right: clamp(0.75rem, 2.8vw, 1.2rem);
+  font-size: clamp(0.55rem, 1.6vw, 0.65rem);
+  letter-spacing: clamp(0.2rem, 1.8vw, 0.36rem);
   text-transform: uppercase;
   color: rgba(198, 160, 69, 0.65);
 }
 
 .message-header {
   margin: 0;
-  padding: 0.95rem 1.2rem 0.75rem;
+  padding: 0.95rem clamp(1rem, 3vw, 1.4rem) 0.75rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.75rem;
   font-size: 0.82rem;
   letter-spacing: 0.2rem;
   text-transform: uppercase;
@@ -1850,6 +1859,7 @@ body.explode .smoke {
   font-size: 0.7rem;
   color: rgba(198, 160, 69, 0.75);
   text-shadow: 0 0 12px rgba(0, 0, 0, 0.45);
+  margin-left: auto;
 }
 
 .message-body {
@@ -2311,12 +2321,33 @@ body.explode .smoke {
   }
 
   .photo-card {
-    padding: clamp(0.75rem, 3vw, 1rem);
+    padding: clamp(0.75rem, 3vw, 1.1rem);
+    border-radius: 10px;
   }
 
   .photo-card::after {
-    font-size: clamp(0.58rem, 2.1vw, 0.75rem);
+    top: clamp(0.5rem, 1.8vw, 0.75rem);
+    left: clamp(0.5rem, 1.8vw, 0.75rem);
+    right: clamp(0.5rem, 1.8vw, 0.75rem);
+    padding: clamp(0.2rem, 1vw, 0.4rem) clamp(0.45rem, 1.8vw, 0.7rem);
+    font-size: clamp(0.58rem, 2.1vw, 0.72rem);
     letter-spacing: clamp(0.1rem, 1.6vw, 0.18rem);
+    text-align: left;
+  }
+
+  .message-shell::before {
+    right: clamp(0.6rem, 2.5vw, 0.95rem);
+    letter-spacing: clamp(0.18rem, 1.6vw, 0.28rem);
+  }
+
+  .message-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.4rem;
+  }
+
+  .message-status {
+    margin-left: 0;
   }
 
   #debug-pause {
