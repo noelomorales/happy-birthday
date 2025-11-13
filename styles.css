@@ -9,7 +9,7 @@
   --text-muted: rgba(228, 229, 220, 0.72);
   --intro-duration: 8.62s;
   --scan-duration: 2600ms;
-  --fuse-duration: 45000ms;
+  --fuse-duration: 5000ms;
   --flame-color: rgba(255, 145, 0, 0.9);
   --flame-color-secondary: rgba(255, 80, 0, 0.85);
   --flame-color-tertiary: rgba(255, 220, 0, 0.8);

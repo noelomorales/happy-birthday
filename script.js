@@ -337,7 +337,7 @@ function initializeGeolocation(options = {}) {
 
 document.documentElement.style.setProperty(
   "--fuse-duration",
-  `${FUSE_DURATION}ms`
+  `${SELF_DESTRUCT_WARNING}ms`
 );
 document.documentElement.style.setProperty(
   "--scan-duration",
@@ -1835,7 +1835,7 @@ function createController(env = {}) {
   const setFuseVariable = () => {
     doc.documentElement.style.setProperty(
       "--fuse-duration",
-      `${FUSE_DURATION}ms`
+      `${SELF_DESTRUCT_WARNING}ms`
     );
     doc.documentElement.style.setProperty("--scan-duration", `${SCAN_DURATION}ms`);
   };

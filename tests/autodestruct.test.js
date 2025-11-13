@@ -66,7 +66,7 @@ describe("Autodestruct timeline", () => {
     const fuseVar = document.documentElement.style.getPropertyValue(
       "--fuse-duration"
     );
-    expect(fuseVar.trim()).toBe(`${constants.FUSE_DURATION}ms`);
+    expect(fuseVar.trim()).toBe(`${constants.SELF_DESTRUCT_WARNING}ms`);
   });
 
   test("unlocks dossier view after intro completes", () => {
