@@ -179,8 +179,9 @@
         >
           <h3>Mission Objectives</h3>
           <p>
-            Your objective is to secure an immediate evac point for critical
-            supplies: merlot, cabernet, and a Revana class package.
+            Your mission, should you choose to accept it, is to arrange
+            immediate evac for critical supplies: merlot, cabernet, and a
+            Revana class package.
           </p>
         </article>
         <article
@@ -227,8 +228,8 @@
         >
           <h3>Gift Logistics</h3>
           <p>
-            A secured location that signs for packages every day. The location
-            is:<br />3141 Mission St.<br />Box 113<br />San Francisco, CA 94110
+            Daily-signed secure drop ready for incoming packages:<br />3141
+            Mission St.<br />Box 113<br />San Francisco, CA 94110
           </p>
           <div class="address-actions">
             <button id="copy-address" type="button" class="copy-address-button">
@@ -252,6 +253,16 @@
               referrerpolicy="no-referrer-when-downgrade"
             ></iframe>
           </div>
+          <div class="map-actions">
+            <button
+              id="copy-map-link"
+              type="button"
+              class="copy-address-button copy-map-button"
+              data-map-url="https://maps.google.com/?q=3141+Mission+St,+San+Francisco,+CA+94110"
+            >
+              Copy Map Link
+            </button>
+          </div>
         </article>
       </section>
     </main>
@@ -264,7 +275,11 @@
     >
       <div class="message-shell">
         <header class="message-header">
-          Incoming Transmission • Noel
+          <div class="message-source">
+            <span class="message-prefix">Incoming Transmission</span>
+            <span class="message-separator" aria-hidden="true">•</span>
+            <span class="message-author">Noel</span>
+          </div>
           <span class="message-status" aria-hidden="true">ENCRYPTED</span>
         </header>
         <div class="message-body" data-message-text>
