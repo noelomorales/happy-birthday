@@ -13,11 +13,11 @@ const TERMINAL_BOOT_LINES = [
   ">> HOLD STEADY FOR IDENTITY SWEEP",
 ];
 
-const TERMINAL_CHAR_DELAY = 18;
-const TERMINAL_LINE_DELAY = 140;
-const SCAN_PREP_DELAY = 260;
-const SCAN_DURATION = 2600;
-const POST_CONFIRM_DELAY = 1600;
+const TERMINAL_CHAR_DELAY = 12;
+const TERMINAL_LINE_DELAY = 90;
+const SCAN_PREP_DELAY = 160;
+const SCAN_DURATION = 1600;
+const POST_CONFIRM_DELAY = 900;
 
 const INTRO_CONFIRM_TIME = Math.round(
   calculateTerminalBootDuration(
@@ -32,8 +32,8 @@ const INTRO_COMPLETE_TIME = INTRO_CONFIRM_TIME + POST_CONFIRM_DELAY;
 const FUSE_DURATION = 45000;
 const SELF_DESTRUCT_WARNING = 5000;
 const POST_EXPLOSION_TRANSMISSION_DELAY = 3200;
-const DEFAULT_TYPE_SPEED = 20;
-const DEFAULT_FOCUS_HOLD = 900;
+const DEFAULT_TYPE_SPEED = 14;
+const DEFAULT_FOCUS_HOLD = 650;
 
 document.documentElement.style.setProperty(
   "--fuse-duration",
@@ -619,7 +619,7 @@ async function runStreamSequence(
         type,
         mode: focusMode,
         label: focusLabel,
-        speed: focusSpeed || accelerateSpeed(baseSpeed, 0.72),
+        speed: focusSpeed || accelerateSpeed(baseSpeed, 0.5),
         text: textContent,
         hold: focusHold || DEFAULT_FOCUS_HOLD,
         image: primary.dataset.focusImage,
@@ -629,18 +629,20 @@ async function runStreamSequence(
     const typingPromise = typeText(
       primary,
       textContent,
-      accelerateSpeed(baseSpeed, 0.78)
+      accelerateSpeed(baseSpeed, 0.58)
     );
     primary.classList.add("pinned");
 
     if (rest.length) {
       cascadePromise = startCascade(rest, focusStage, focusContent, {
-        initialDelay: 850,
+        initialDelay: 420,
+        betweenDelay: 320,
+        speedFactor: 0.58,
       });
     }
 
     await Promise.all([typingPromise, cascadePromise]);
-    await controlledDelay(160);
+    await controlledDelay(90);
   } else if (type === "media") {
     if (focusMode) {
       await engageFocus(primary, focusStage, focusContent, {
@@ -655,7 +657,8 @@ async function runStreamSequence(
 
     if (rest.length) {
       cascadePromise = startCascade(rest, focusStage, focusContent, {
-        initialDelay: 420,
+        initialDelay: 260,
+        betweenDelay: 260,
       });
       await cascadePromise;
     }
@@ -671,13 +674,14 @@ async function runStreamSequence(
 
     if (rest.length) {
       cascadePromise = startCascade(rest, focusStage, focusContent, {
-        initialDelay: 520,
+        initialDelay: 320,
+        betweenDelay: 300,
       });
       await cascadePromise;
     }
   }
 
-  await controlledDelay(260);
+  await controlledDelay(140);
 
   if (typeof onComplete === "function") {
     onComplete();
@@ -708,7 +712,7 @@ function resolveFocusLabel(item) {
   return "Incoming Feed";
 }
 
-function accelerateSpeed(base, factor = 0.65) {
+function accelerateSpeed(base, factor = 0.52) {
   const source = Number(base) || DEFAULT_TYPE_SPEED;
   const value = Math.floor(source * factor);
   return Math.max(8, value);
@@ -724,9 +728,9 @@ async function startCascade(
     return;
   }
 
-  const initialDelay = options.initialDelay ?? 600;
-  const betweenDelay = options.betweenDelay ?? 620;
-  const speedFactor = options.speedFactor ?? 0.68;
+  const initialDelay = options.initialDelay ?? 420;
+  const betweenDelay = options.betweenDelay ?? 320;
+  const speedFactor = options.speedFactor ?? 0.58;
 
   await controlledDelay(initialDelay);
 
@@ -747,7 +751,7 @@ async function startCascade(
           type,
           mode: focusMode,
           label: focusLabel,
-          speed: focusSpeed || accelerateSpeed(baseSpeed, speedFactor * 0.92),
+          speed: focusSpeed || accelerateSpeed(baseSpeed, speedFactor * 0.85),
           text: textContent,
           hold: focusHold || DEFAULT_FOCUS_HOLD,
           image: item.dataset.focusImage,
@@ -756,7 +760,7 @@ async function startCascade(
 
       await typeText(item, textContent, accelerateSpeed(baseSpeed, speedFactor));
       item.classList.add("pinned");
-      await controlledDelay(180);
+      await controlledDelay(100);
       await controlledDelay(betweenDelay);
       continue;
     }
@@ -772,7 +776,7 @@ async function startCascade(
       }
 
       item.classList.add("active");
-      await controlledDelay(200);
+      await controlledDelay(120);
       await controlledDelay(betweenDelay);
       continue;
     }
@@ -785,7 +789,7 @@ async function startCascade(
     });
 
     item.classList.add("active");
-    await controlledDelay(260);
+    await controlledDelay(140);
     await controlledDelay(betweenDelay);
   }
 }
@@ -816,18 +820,18 @@ async function engageFocus(item, stage, content, config) {
   content.innerHTML = "";
   content.appendChild(container);
 
-  await controlledDelay(45);
+  await controlledDelay(30);
   stage.classList.add("engaged");
 
   if (config.type === "text") {
     await typeText(target, config.text || "", typeSpeed);
-    await controlledDelay(170);
+    await controlledDelay(90);
   } else {
     await controlledDelay(holdDuration);
   }
 
   stage.classList.add("retreating");
-  await controlledDelay(240);
+  await controlledDelay(140);
 
   stage.classList.remove("visible", "engaged", "retreating");
   stage.removeAttribute("data-mode");
