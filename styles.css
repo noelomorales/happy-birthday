@@ -105,23 +105,58 @@ body.paused * {
   width: 160%;
   max-width: 220vw;
   height: 260vh;
-  background: linear-gradient(
-    to bottom,
-    rgba(255, 0, 60, 0) 0%,
-    rgba(255, 0, 60, 0.75) 32%,
-    rgba(255, 36, 36, 0.95) 50%,
-    rgba(255, 0, 60, 0.75) 68%,
-    rgba(255, 0, 60, 0) 100%
-  );
-  mix-blend-mode: screen;
   transform: translate(-50%, -140vh);
   animation: scan var(--scan-duration) linear infinite;
-  opacity: 0.75;
+  mix-blend-mode: screen;
+  opacity: 0.95;
+  pointer-events: none;
+  filter: drop-shadow(0 0 18px rgba(255, 0, 76, 0.65))
+    drop-shadow(0 0 42px rgba(255, 38, 82, 0.45));
+  will-change: transform;
+}
+
+.scan-line::before,
+.scan-line::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.scan-line::before {
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 0, 76, 0) 0%,
+    rgba(255, 0, 76, 0.18) 38%,
+    rgba(255, 0, 76, 0.78) 46%,
+    rgba(255, 194, 194, 0.98) 50%,
+    rgba(255, 0, 76, 0.78) 54%,
+    rgba(255, 0, 76, 0.18) 62%,
+    rgba(255, 0, 76, 0) 100%
+  );
+  box-shadow: 0 0 22px rgba(255, 0, 76, 0.75), 0 0 68px rgba(255, 40, 88, 0.55);
+  mix-blend-mode: screen;
+}
+
+.scan-line::after {
+  inset: -80vh 0 20vh;
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 0, 76, 0.4) 0%,
+    rgba(255, 0, 76, 0.26) 24%,
+    rgba(255, 0, 76, 0.12) 58%,
+    rgba(255, 0, 76, 0.04) 82%,
+    rgba(255, 0, 76, 0) 100%
+  );
+  filter: blur(36px);
+  opacity: 0.8;
+  transform: translateY(-32vh);
+  mix-blend-mode: screen;
 }
 
 #intro.confirmed .scan-line {
   animation-duration: 1.4s;
-  opacity: 0.6;
+  opacity: 0.75;
 }
 
 .intro-text {
