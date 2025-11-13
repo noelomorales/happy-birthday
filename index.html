@@ -62,6 +62,25 @@
         <span></span>
         <span></span>
       </div>
+      <div class="particle-halo" aria-hidden="true"></div>
+      <div class="debris-field" aria-hidden="true">
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+      <div class="spark-trails" aria-hidden="true">
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
       <div class="smoke"></div>
     </div>
 
@@ -70,46 +89,38 @@
         <div class="header-label">CLASSIFIED DOSSIER</div>
         <h1>Subject: AGENT BENITO</h1>
         <p class="header-meta">
-          Clearance Level: Charlie • File Reference: BRD-0425 • Eyes Only
+          Clearance Level: Charlie • File Reference: BRD-0425 • For Your Eyes Only
         </p>
       </header>
 
       <section class="dossier-overview">
         <div class="overview-column">
           <h2>Operational Snapshot</h2>
-          <p>
+          <div
+            class="overview-report stream-item"
+            data-stream-order="1"
+            data-stream-type="text"
+            data-stream-speed="30"
+            data-focus-mode="brief"
+            data-focus-title="Operational Snapshot"
+          >
             A highly decorated operative with an impeccable record of living la
             vida loca. Armed, and very dangerous. Known to karaoke at all hours
             of the morning.
-          </p>
-          <p class="birthday-message">
-            <span class="callout-red"
-              >My favorite father, happy birthday. Congratulations on reaching
-              another year of living la vida loca. You inspire me to work hard,
-              and relax hard, and appreciate the good people in my life. I give
-              you this, a secure location to ship anything (and especially
-              wine) to, without having to worry about its security (or my
-              schedule).</span
-            >
-          </p>
-          <p class="birthday-message">
-            <span class="callout-red"
-              >Looking forward to sharing some of your new favorites together.<br /><br />
-              Love, Noel.</span
-            >
-          </p>
-          <p>
+
             Operational morale remains at peak levels. Field assets confirm the
             subject inspires allies to work hard, relax harder, and treasure
             every trusted confidant.
-          </p>
+          </div>
         </div>
         <div class="overview-column dossier-media">
           <figure
             class="photo-card stream-item"
             data-label="Surveillance Capture A"
-            data-stream-order="5"
+            data-stream-order="2"
             data-stream-type="media"
+            data-focus-mode="media"
+            data-focus-title="Capture A"
           >
             <!-- Replace the placeholder below with your own image once available -->
             <img src="assets/images/subject-1.svg" alt="Primary subject portrait" />
@@ -117,16 +128,20 @@
           <figure
             class="photo-card stream-item"
             data-label="Field Report B"
-            data-stream-order="6"
+            data-stream-order="3"
             data-stream-type="media"
+            data-focus-mode="media"
+            data-focus-title="Capture B"
           >
             <img src="assets/images/subject-2.svg" alt="Subject with allies" />
           </figure>
           <figure
             class="photo-card stream-item"
             data-label="Mission Evidence C"
-            data-stream-order="7"
+            data-stream-order="4"
             data-stream-type="media"
+            data-focus-mode="media"
+            data-focus-title="Capture C"
           >
             <img src="assets/images/subject-3.svg" alt="Memorable mission moment" />
           </figure>
@@ -134,7 +149,13 @@
       </section>
 
       <section class="intel-grid">
-        <article class="intel-card">
+        <article
+          class="intel-card stream-item"
+          data-stream-type="module"
+          data-stream-order="5"
+          data-focus-mode="module"
+          data-focus-title="Mission Objectives"
+        >
           <h3>Mission Objectives</h3>
           <p>
             Your mission, should you choose to accept it, is to secure a
@@ -142,7 +163,13 @@
             and a Revana class package.
           </p>
         </article>
-        <article class="intel-card">
+        <article
+          class="intel-card stream-item"
+          data-stream-type="module"
+          data-stream-order="6"
+          data-focus-mode="module"
+          data-focus-title="Gift Logistics"
+        >
           <h3>Gift Logistics</h3>
           <p>
             A secured location that signs for packages every day. The location
@@ -151,9 +178,11 @@
           <div class="map-frame">
             <div class="map-overlay" aria-hidden="true">
               <div class="overlay-grid"></div>
+              <div class="overlay-noise"></div>
               <div class="overlay-pulse"></div>
               <div class="overlay-target"></div>
               <div class="overlay-sweep"></div>
+              <div class="overlay-halo"></div>
             </div>
             <iframe
               title="Mission District Tactical Map"
@@ -164,13 +193,28 @@
             ></iframe>
           </div>
         </article>
-        <article class="intel-card map-card">
+        <article
+          class="intel-card map-card stream-item"
+          data-stream-type="module"
+          data-stream-order="7"
+          data-focus-mode="map"
+          data-focus-title="Tactical Map"
+          data-focus-hold="1600"
+        >
           <h3>Tactical Map</h3>
           <p class="map-description">
-            Surveillance overlay for Mission District drop zone. Maintain
-            constant vigilance and deploy assets with precision timing.
+            Surveillance overlay for Mission District drop zone. Safe house
+            coordinates confirmed for secure storage of high-value cargo.
           </p>
           <div class="map-frame">
+            <div class="map-overlay" aria-hidden="true">
+              <div class="overlay-grid"></div>
+              <div class="overlay-noise"></div>
+              <div class="overlay-pulse"></div>
+              <div class="overlay-target"></div>
+              <div class="overlay-sweep"></div>
+              <div class="overlay-halo"></div>
+            </div>
             <iframe
               title="Mission District Tactical Map"
               src="https://maps.google.com/maps?q=3141%20Mission%20St%2C%20San%20Francisco%2C%20CA%2094110&output=embed"
@@ -196,8 +240,8 @@
         </header>
         <div class="message-body" data-message-text>
           &gt;&gt; My favorite father, happy birthday. Congratulations on reaching another
-          year of living la vida loca. You inspire me to work hard, and relax hard,
-          and appreciate the good people in my life. I give you this, a secure
+          year of excellence. You inspire me to work hard, and relax hard, and
+          appreciate the good people in my life. I give you this, a secure
           location to ship anything (and especially wine) to, without having to
           worry about its security (or my schedule).
 
