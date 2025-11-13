@@ -23,6 +23,10 @@
       </div>
     </div>
 
+    <button id="debug-pause" type="button" aria-pressed="false">
+      Pause Timeline
+    </button>
+
     <div id="self-destruct" role="status" aria-live="assertive">
       <div class="self-destruct-panel">
         <p class="self-destruct-heading">!!! ALERT !!!</p>
@@ -37,10 +41,19 @@
       <div class="explosion-flash"></div>
       <div class="explosion-core"></div>
       <div class="explosion-ring"></div>
+      <div class="shockwave"></div>
       <div class="flame-field">
         <div class="flame layer-1"></div>
         <div class="flame layer-2"></div>
         <div class="flame layer-3"></div>
+      </div>
+      <div class="ember-field">
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
       </div>
       <div class="smoke"></div>
     </div>
@@ -85,14 +98,29 @@
           </p>
         </div>
         <div class="overview-column dossier-media">
-          <figure class="photo-card" data-label="Surveillance Capture A">
+          <figure
+            class="photo-card stream-item"
+            data-label="Surveillance Capture A"
+            data-stream-order="5"
+            data-stream-type="media"
+          >
             <!-- Replace the placeholder below with your own image once available -->
             <img src="assets/images/subject-1.svg" alt="Primary subject portrait" />
           </figure>
-          <figure class="photo-card" data-label="Field Report B">
+          <figure
+            class="photo-card stream-item"
+            data-label="Field Report B"
+            data-stream-order="6"
+            data-stream-type="media"
+          >
             <img src="assets/images/subject-2.svg" alt="Subject with allies" />
           </figure>
-          <figure class="photo-card" data-label="Mission Evidence C">
+          <figure
+            class="photo-card stream-item"
+            data-label="Mission Evidence C"
+            data-stream-order="7"
+            data-stream-type="media"
+          >
             <img src="assets/images/subject-3.svg" alt="Memorable mission moment" />
           </figure>
         </div>
@@ -132,6 +160,30 @@
         </article>
       </section>
     </main>
+
+    <div
+      id="live-message"
+      role="alertdialog"
+      aria-live="polite"
+      aria-label="Incoming secure message"
+    >
+      <div class="message-shell">
+        <header class="message-header">
+          Incoming Transmission • Noel
+          <span class="message-status" aria-hidden="true">ENCRYPTED</span>
+        </header>
+        <div class="message-body" data-message-text>
+          &gt;&gt; My favorite father, happy birthday. Congratulations on reaching another
+          year of living la vida loca. You inspire me to work hard, and relax hard,
+          and appreciate the good people in my life. I give you this, a secure
+          location to ship anything (and especially wine) to, without having to
+          worry about its security (or my schedule).
+
+          Looking forward to sharing some of your new favorites together.
+          Love, Noel
+        </div>
+      </div>
+    </div>
 
     <div id="fuse">
       <div class="fuse-track">

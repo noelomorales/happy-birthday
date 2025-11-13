@@ -32,6 +32,37 @@ body.show-dossier {
   overflow: hidden;
 }
 
+body.paused {
+  cursor: not-allowed;
+}
+
+body.paused * {
+  animation-play-state: paused !important;
+}
+
+#debug-pause {
+  position: fixed;
+  top: 1.25rem;
+  right: 1.25rem;
+  z-index: 110;
+  padding: 0.6rem 1.2rem;
+  background: rgba(7, 9, 15, 0.8);
+  border: 1px solid rgba(0, 240, 255, 0.4);
+  color: var(--text-primary);
+  font-family: inherit;
+  text-transform: uppercase;
+  letter-spacing: 0.12rem;
+  cursor: pointer;
+  transition: background 0.3s ease, color 0.3s ease, border 0.3s ease;
+}
+
+#debug-pause:hover,
+#debug-pause:focus {
+  background: rgba(0, 240, 255, 0.15);
+  border-color: rgba(0, 240, 255, 0.7);
+  outline: none;
+}
+
 #intro {
   position: fixed;
   inset: 0;
@@ -59,7 +90,10 @@ body.show-dossier {
 
 .scan-mask {
   position: absolute;
-  inset: -10%;
+  inset: -10% 0;
+  width: 120vw;
+  left: 50%;
+  transform: translateX(-50%);
   overflow: hidden;
   pointer-events: none;
 }
@@ -67,7 +101,7 @@ body.show-dossier {
 .scan-line {
   position: absolute;
   top: -100%;
-  left: 0;
+  left: 50%;
   width: 100%;
   height: 35%;
   background: linear-gradient(
@@ -80,6 +114,7 @@ body.show-dossier {
   );
   mix-blend-mode: screen;
   animation: scan var(--scan-duration) ease-in-out infinite;
+  transform: translateX(-50%);
 }
 
 #intro.confirmed .scan-line {
@@ -227,6 +262,41 @@ body.show-dossier main#dossier {
   background: rgba(0, 0, 0, 0.3);
   aspect-ratio: 4 / 3;
   object-fit: cover;
+}
+
+.stream-item {
+  opacity: 0;
+  filter: blur(12px);
+  transform: translateY(8px);
+  transition: opacity 0.6s ease, filter 0.6s ease, transform 0.6s ease;
+}
+
+.stream-item.active {
+  opacity: 1;
+  filter: blur(0px);
+  transform: translateY(0);
+}
+
+.stream-item.typing {
+  opacity: 1;
+  filter: blur(0px);
+  transform: translateY(0);
+}
+
+.stream-item[data-stream-type="media"] {
+  transform: scale(0.96);
+}
+
+.stream-item[data-stream-type="media"].active {
+  transform: scale(1);
+}
+
+.stream-item[data-stream-type="module"] {
+  transform: translateY(12px) scale(0.98);
+}
+
+.stream-item[data-stream-type="module"].active {
+  transform: translateY(0) scale(1);
 }
 
 .intel-grid {
@@ -400,7 +470,13 @@ body.show-dossier #fuse {
 #explosion {
   position: fixed;
   inset: 0;
-  background: radial-gradient(circle at center, rgba(255, 255, 255, 0.9) 0%, rgba(255, 120, 0, 0.7) 35%, rgba(10, 0, 0, 0.95) 75%);
+  background: radial-gradient(
+    circle at center,
+    rgba(255, 255, 255, 0.92) 0%,
+    rgba(255, 160, 40, 0.8) 30%,
+    rgba(20, 0, 0, 0.95) 68%,
+    rgba(0, 0, 0, 1) 100%
+  );
   opacity: 0;
   pointer-events: none;
   z-index: 70;
@@ -423,6 +499,8 @@ body.explode #self-destruct {
 .explosion-flash,
 .explosion-core,
 .explosion-ring,
+.shockwave,
+.ember-field,
 .flame-field,
 .smoke {
   position: absolute;
@@ -459,6 +537,86 @@ body.explode .explosion-core {
 
 body.explode .explosion-ring {
   animation: ring-expand 1.5s ease-out forwards;
+}
+
+.shockwave {
+  border: 4px solid rgba(255, 220, 120, 0.6);
+  border-radius: 50%;
+  opacity: 0;
+  transform: scale(0.2);
+}
+
+body.explode .shockwave {
+  animation: shockwave-expand 1.4s ease-out 0.25s forwards;
+}
+
+.ember-field {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 0;
+  place-items: center;
+  pointer-events: none;
+}
+
+.ember-field span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fffbd1 0%, #ff6200 60%, rgba(255, 0, 0, 0) 100%);
+  opacity: 0;
+  --ember-x: 90px;
+  --ember-y: -70px;
+  --ember-scale: 1.4;
+}
+
+body.explode .ember-field span {
+  animation: ember-trail 1.8s ease-out forwards;
+}
+
+.ember-field span:nth-child(odd) {
+  animation-delay: 0.35s;
+}
+
+.ember-field span:nth-child(even) {
+  animation-delay: 0.55s;
+}
+
+.ember-field span:nth-child(3n) {
+  animation-delay: 0.75s;
+}
+
+.ember-field span:nth-child(4n) {
+  animation-delay: 0.95s;
+}
+
+.ember-field span:nth-child(2) {
+  --ember-x: -80px;
+  --ember-y: -50px;
+  --ember-scale: 1.6;
+}
+
+.ember-field span:nth-child(3) {
+  --ember-x: 120px;
+  --ember-y: -30px;
+  --ember-scale: 1.8;
+}
+
+.ember-field span:nth-child(4) {
+  --ember-x: -120px;
+  --ember-y: -20px;
+  --ember-scale: 1.5;
+}
+
+.ember-field span:nth-child(5) {
+  --ember-x: 60px;
+  --ember-y: -110px;
+  --ember-scale: 2;
+}
+
+.ember-field span:nth-child(6) {
+  --ember-x: -40px;
+  --ember-y: -100px;
+  --ember-scale: 1.7;
 }
 
 .flame-field {
@@ -499,6 +657,65 @@ body.explode .flame.layer-3 {
 
 body.explode .smoke {
   animation: smoke-rise 4s ease-out 0.5s forwards;
+}
+
+#live-message {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  width: min(90vw, 360px);
+  z-index: 90;
+  opacity: 0;
+  transform: translateY(25px);
+  pointer-events: none;
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+#live-message.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.message-shell {
+  background: rgba(6, 12, 18, 0.92);
+  border: 2px solid rgba(0, 240, 255, 0.3);
+  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+}
+
+.message-header {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+  letter-spacing: 0.16rem;
+  text-transform: uppercase;
+  color: rgba(0, 240, 255, 0.8);
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.6), rgba(0, 240, 255, 0.1));
+}
+
+.message-status {
+  font-size: 0.7rem;
+  color: rgba(255, 0, 76, 0.75);
+}
+
+.message-body {
+  padding: 1.2rem 1.1rem 1.5rem;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.85);
+  white-space: pre-line;
+}
+
+.message-body::before {
+  content: "";
+  display: block;
+  height: 1px;
+  width: 100%;
+  margin-bottom: 0.75rem;
+  background: linear-gradient(90deg, rgba(255, 0, 76, 0), rgba(255, 0, 76, 0.6), rgba(255, 0, 76, 0));
 }
 
 @keyframes scan {
@@ -557,6 +774,45 @@ body.explode .smoke {
   }
   to {
     left: 100%;
+  }
+}
+
+@keyframes grid-pulse {
+  0% {
+    background-position: 0 0, 0 0;
+  }
+  100% {
+    background-position: 0 30px, 30px 0;
+  }
+}
+
+@keyframes pulse-ring {
+  0%,
+  100% {
+    transform: scale(0.92);
+    opacity: 0.4;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.9;
+  }
+}
+
+@keyframes sweep-scan {
+  0% {
+    --sweep-x: 20%;
+    --sweep-y: 25%;
+    opacity: 0.15;
+  }
+  50% {
+    --sweep-x: 70%;
+    --sweep-y: 60%;
+    opacity: 0.45;
+  }
+  100% {
+    --sweep-x: 35%;
+    --sweep-y: 40%;
+    opacity: 0.2;
   }
 }
 
@@ -621,6 +877,34 @@ body.explode .smoke {
   }
 }
 
+@keyframes shockwave-expand {
+  0% {
+    opacity: 0.2;
+    transform: scale(0.2);
+  }
+  60% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(2.4);
+  }
+}
+
+@keyframes ember-trail {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) scale(0.6);
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--ember-x), var(--ember-y)) scale(var(--ember-scale));
+  }
+}
+
 @keyframes flame-pulse {
   0% {
     opacity: 0;
@@ -648,6 +932,20 @@ body.explode .smoke {
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .stream-item,
+  #live-message,
+  .map-overlay,
+  .overlay-grid,
+  .overlay-pulse,
+  .overlay-sweep,
+  .overlay-target,
+  #debug-pause {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
 @media (max-width: 768px) {
   main#dossier {
     padding: 5rem 1.5rem 6rem;
@@ -663,5 +961,18 @@ body.explode .smoke {
 
   #fuse {
     bottom: 1.5rem;
+  }
+
+  #debug-pause {
+    top: 1rem;
+    right: 1rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.75rem;
+  }
+
+  #live-message {
+    right: 1rem;
+    left: 1rem;
+    width: auto;
   }
 }
