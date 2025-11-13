@@ -529,6 +529,16 @@ body.show-dossier main#dossier {
   margin: clamp(1rem, 3vw, 1.5rem) 0 clamp(1.2rem, 3vw, 1.8rem);
 }
 
+.map-actions {
+  margin-top: clamp(0.6rem, 2vw, 1rem);
+  display: flex;
+  justify-content: flex-start;
+}
+
+.map-actions .copy-address-button {
+  width: min(280px, 100%);
+}
+
 .copy-address-button {
   display: inline-flex;
   align-items: center;
@@ -1844,16 +1854,42 @@ body.explode .smoke {
   padding: 0.95rem 1.2rem 0.75rem;
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: baseline;
+  gap: 0.75rem;
+  flex-wrap: wrap;
   font-size: 0.82rem;
-  letter-spacing: 0.2rem;
-  text-transform: uppercase;
   color: rgba(239, 224, 195, 0.85);
   background: linear-gradient(90deg, rgba(0, 0, 0, 0.7), rgba(198, 160, 69, 0.12));
 }
 
+.message-source {
+  display: inline-flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  letter-spacing: 0.14rem;
+  text-transform: uppercase;
+}
+
+.message-prefix {
+  font-weight: 600;
+}
+
+.message-author {
+  font-weight: 600;
+  color: rgba(198, 160, 69, 0.85);
+  letter-spacing: 0.18rem;
+}
+
+.message-separator {
+  color: rgba(198, 160, 69, 0.65);
+  letter-spacing: 0;
+}
+
 .message-status {
   font-size: 0.7rem;
+  letter-spacing: 0.28rem;
+  text-transform: uppercase;
   color: rgba(198, 160, 69, 0.75);
   text-shadow: 0 0 12px rgba(0, 0, 0, 0.45);
 }

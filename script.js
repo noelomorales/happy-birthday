@@ -35,6 +35,9 @@ const POST_EXPLOSION_TRANSMISSION_DELAY = 3200;
 const DEFAULT_TYPE_SPEED = 14;
 const DEFAULT_FOCUS_HOLD = 650;
 const ADDRESS_COPY_TEXT = "3141 Mission St.\nBox 113\nSan Francisco, CA 94110";
+const MAP_LOCATION_URL =
+  (typeof window !== "undefined" && window.MAP_LOCATION_URL) ||
+  "https://maps.google.com/?q=3141+Mission+St,+San+Francisco,+CA+94110";
 
 document.documentElement.style.setProperty(
   "--fuse-duration",
@@ -364,6 +367,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const hasDecryptionSequence =
     typeof startDecryptionSequence === "function";
   const copyAddressButton = document.getElementById("copy-address");
+  const copyMapLinkButton = document.getElementById("copy-map-link");
   const previewOverlay = document.getElementById("image-preview");
   const previewFrame = previewOverlay
     ? previewOverlay.querySelector(".preview-frame")
@@ -398,7 +402,18 @@ document.addEventListener("DOMContentLoaded", () => {
       .trim()
       .replace(/\s+/g, " ");
     copyAddressButton.addEventListener("click", () => {
-      handleCopyAddress(copyAddressButton, ADDRESS_COPY_TEXT);
+      handleCopyAction(copyAddressButton, ADDRESS_COPY_TEXT);
+    });
+  }
+
+  if (copyMapLinkButton) {
+    const mapUrl =
+      copyMapLinkButton.dataset.mapUrl?.trim() || MAP_LOCATION_URL || "";
+    copyMapLinkButton.dataset.defaultLabel = copyMapLinkButton.textContent
+      .trim()
+      .replace(/\s+/g, " ");
+    copyMapLinkButton.addEventListener("click", () => {
+      handleCopyAction(copyMapLinkButton, mapUrl);
     });
   }
 
@@ -710,7 +725,7 @@ function initializeImagePreview(elements = {}) {
   };
 }
 
-async function handleCopyAddress(button, text) {
+async function handleCopyAction(button, text) {
   if (!button || !text) {
     return;
   }
@@ -730,7 +745,7 @@ async function handleCopyAddress(button, text) {
       button.textContent = "Copy Unavailable";
     }
   } catch (error) {
-    console.error("Unable to copy address", error);
+    console.error("Unable to copy text", error);
     button.classList.remove("copied");
     button.classList.add("copy-error");
     button.textContent = "Copy Failed";
@@ -1016,7 +1031,7 @@ async function showTransmission(container, messageBody) {
 
   container.classList.add("visible");
   await controlledDelay(220);
-  await typeText(messageBody, messageBody.dataset.streamText || "", 20);
+  await typeText(messageBody, messageBody.dataset.streamText || "", 12);
 }
 
 function resolveFocusLabel(item) {
