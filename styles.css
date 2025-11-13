@@ -860,12 +860,16 @@ body.show-dossier #fuse {
 .fuse-progress {
   position: absolute;
   top: 0;
-  left: 0;
+  right: 0;
+  left: auto;
   height: 100%;
   width: 100%;
   background: linear-gradient(90deg, rgba(255, 80, 0, 0.95), rgba(255, 190, 40, 0.9));
+  transform-origin: 100% 50%;
+  transform: scaleX(1);
   animation: fuse-burn var(--fuse-duration) linear forwards;
   animation-play-state: paused;
+  will-change: transform;
 }
 
 .spark {
@@ -2058,11 +2062,14 @@ body.explode .smoke {
 }
 
 @keyframes fuse-burn {
-  from {
-    width: 100%;
+  0% {
+    transform: scaleX(1);
   }
-  to {
-    width: 0%;
+  85% {
+    transform: scaleX(0.06);
+  }
+  100% {
+    transform: scaleX(0);
   }
 }
 
