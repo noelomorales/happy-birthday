@@ -1,7 +1,7 @@
-const INTRO_CONFIRM_TIME = 4000;
-const INTRO_COMPLETE_TIME = 6200;
+const INTRO_CONFIRM = 4000;
+const INTRO_COMPLETE = 6500;
 const FUSE_DURATION = 25000;
-const SELF_DESTRUCT_WARNING = 5000;
+const WARNING_DURATION = 5000;
 
 document.documentElement.style.setProperty(
   "--fuse-duration",
@@ -10,40 +10,76 @@ document.documentElement.style.setProperty(
 
 document.addEventListener("DOMContentLoaded", () => {
   const body = document.body;
-  const intro = document.getElementById("intro");
-  const introText = intro.querySelector(".intro-text");
-  const selfDestructOverlay = document.getElementById("self-destruct");
-  const countdownEl = selfDestructOverlay.querySelector(
-    ".self-destruct-countdown"
-  );
+  const boot = document.getElementById("boot-sequence");
+  const initText = boot.querySelector('[data-state="init"]');
+  const confirmText = boot.querySelector('[data-state="confirm"]');
+  const fuseProgress = document.querySelector(".fuse__progress");
+  const fuseSpark = document.querySelector(".fuse__spark");
+  const fuseTime = document.querySelector("[data-time]");
+  const warning = document.getElementById("warning");
+  const warningCount = warning.querySelector("[data-count]");
+  const detonation = document.getElementById("detonation");
+
+  let fuseStartTimestamp = null;
+
+  initText.classList.add("active");
 
   setTimeout(() => {
-    intro.classList.add("confirmed");
-    introText.textContent = "Identity Confirmed";
-  }, INTRO_CONFIRM_TIME);
+    initText.classList.remove("active");
+    confirmText.classList.add("active");
+  }, INTRO_CONFIRM);
 
   setTimeout(() => {
-    intro.classList.add("intro-complete");
-    body.classList.add("show-dossier");
-  }, INTRO_COMPLETE_TIME);
+    boot.classList.add("inactive");
+    body.classList.add("ready");
+    startFuseCountdown();
+  }, INTRO_COMPLETE);
 
-  const countdownStart = () => {
-    selfDestructOverlay.classList.add("visible");
-    let remaining = SELF_DESTRUCT_WARNING / 1000;
-    countdownEl.textContent = remaining;
+  function animateFuse(timestamp) {
+    if (!fuseStartTimestamp) fuseStartTimestamp = timestamp;
+    const elapsed = Math.min(timestamp - fuseStartTimestamp, FUSE_DURATION);
+    const ratio = Math.max(1 - elapsed / FUSE_DURATION, 0);
 
-    const tick = setInterval(() => {
+    fuseProgress.style.transform = `scaleX(${ratio})`;
+    fuseSpark.style.left = `${ratio * 100}%`;
+
+    const secondsRemaining = Math.ceil((FUSE_DURATION - elapsed) / 1000);
+    fuseTime.textContent = Math.max(secondsRemaining, 0);
+
+    if (elapsed < FUSE_DURATION) {
+      requestAnimationFrame(animateFuse);
+    } else {
+      fuseSpark.style.left = "0%";
+      fuseTime.textContent = "0";
+    }
+  }
+
+  function startFuseCountdown() {
+    fuseStartTimestamp = null;
+    requestAnimationFrame(animateFuse);
+    setTimeout(triggerWarning, FUSE_DURATION);
+    setTimeout(triggerExplosion, FUSE_DURATION + WARNING_DURATION);
+  }
+
+  function triggerWarning() {
+    warning.classList.add("active");
+    let remaining = WARNING_DURATION / 1000;
+    warningCount.textContent = remaining;
+
+    const countdownTimer = setInterval(() => {
       remaining -= 1;
-      countdownEl.textContent = Math.max(remaining, 0);
+      warningCount.textContent = Math.max(remaining, 0);
       if (remaining <= 0) {
-        clearInterval(tick);
+        clearInterval(countdownTimer);
       }
     }, 1000);
-  };
+  }
 
-  setTimeout(countdownStart, FUSE_DURATION);
-
-  setTimeout(() => {
-    body.classList.add("explode");
-  }, FUSE_DURATION + SELF_DESTRUCT_WARNING);
+  function triggerExplosion() {
+    body.classList.add("engulfed");
+    detonation.classList.add("active");
+    setTimeout(() => {
+      warning.classList.remove("active");
+    }, 300);
+  }
 });
