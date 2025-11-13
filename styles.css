@@ -1304,6 +1304,20 @@ body.final-transmission #explosion {
   pointer-events: none;
 }
 
+body.explosion-recovery::after {
+  animation: blackout-return 0.9s ease forwards;
+}
+
+body.explosion-recovery #explosion {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.7s ease;
+}
+
+body.explosion-recovery main#dossier {
+  opacity: 1;
+}
+
 body.explode::after {
   animation: blackout 1.4s ease forwards 1.15s;
 }
@@ -2220,6 +2234,15 @@ body.explode .smoke {
   }
   to {
     opacity: 1;
+  }
+}
+
+@keyframes blackout-return {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
   }
 }
 
