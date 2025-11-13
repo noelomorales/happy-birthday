@@ -12,11 +12,6 @@ document.documentElement.style.setProperty(
 const scheduler = createScheduler();
 let isPaused = false;
 
-const focusStageState = {
-  stage: null,
-  content: null,
-};
-
 const countdownState = {
   active: false,
   remainingMs: SELF_DESTRUCT_WARNING,
@@ -37,12 +32,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const pauseButton = document.getElementById("debug-pause");
   const liveMessage = document.getElementById("live-message");
   const liveMessageBody = liveMessage.querySelector(".message-body");
-  const focusStage = document.getElementById("focus-stage");
-
-  if (focusStage) {
-    focusStageState.stage = focusStage;
-    focusStageState.content = focusStage.querySelector(".focus-content");
-  }
 
   countdownState.display = countdownEl;
 
@@ -64,11 +53,9 @@ document.addEventListener("DOMContentLoaded", () => {
     () => {
       intro.classList.add("intro-complete");
       body.classList.add("show-dossier");
-      runStreamSequence(
-        orderedStreamItems,
-        liveMessage,
-        liveMessageBody
-      ).catch(console.error);
+      runStreamSequence(orderedStreamItems, liveMessage, liveMessageBody).catch(
+        console.error
+      );
     },
     INTRO_COMPLETE_TIME
   );
@@ -152,8 +139,6 @@ function prepareStreamItems(items, messageBody, messageContainer) {
       item.dataset.streamText = content;
       item.textContent = "";
     }
-
-    item.classList.remove("deployed");
   });
 
   const messageText = extractText(messageBody);
@@ -169,11 +154,11 @@ async function runStreamSequence(items, liveMessage, messageBody) {
 
     if (type === "text") {
       const speed = Number(item.dataset.streamSpeed) || DEFAULT_TYPE_SPEED;
-      await presentTextItem(item, speed);
-    } else if (type === "media") {
-      await presentMediaItem(item);
-    } else if (type === "module") {
-      await presentModuleItem(item);
+      await typeText(item, item.dataset.streamText || "", speed);
+      await controlledDelay(140);
+    } else {
+      item.classList.add("active");
+      await controlledDelay(260);
     }
   }
 
@@ -185,95 +170,6 @@ async function showTransmission(container, messageBody) {
   container.classList.add("visible");
   await controlledDelay(220);
   await typeText(messageBody, messageBody.dataset.streamText || "", 28);
-}
-
-async function presentTextItem(item, speed) {
-  const text = item.dataset.streamText || "";
-  await withFocusStage(item, {
-    mode: "text",
-  }, async (target) => {
-    target.classList.add("focus-text");
-    await typeText(target, text, speed, { activate: false });
-  });
-
-  setElementText(item, text);
-  item.classList.add("active", "deployed");
-  await controlledDelay(160);
-}
-
-async function presentMediaItem(item) {
-  await withFocusStage(item, { mode: "media" }, async (target) => {
-    target.classList.add("focus-media");
-    const clone = item.cloneNode(true);
-    stripStreamClasses(clone);
-    target.appendChild(clone);
-    await controlledDelay(520);
-  });
-
-  item.classList.add("active", "deployed");
-  await controlledDelay(120);
-}
-
-async function presentModuleItem(item) {
-  const isMap = item.classList.contains("map-card");
-  await withFocusStage(
-    item,
-    { mode: isMap ? "map" : "module", hold: isMap ? 720 : 360 },
-    async (target) => {
-      target.classList.add("focus-module");
-      if (isMap) {
-        target.classList.add("focus-map");
-      }
-      const clone = item.cloneNode(true);
-      stripStreamClasses(clone);
-      target.appendChild(clone);
-      await controlledDelay(isMap ? 820 : 420);
-    }
-  );
-
-  item.classList.add("active", "deployed");
-  await controlledDelay(140);
-}
-
-async function withFocusStage(sourceItem, options, presenter) {
-  const { stage, content } = focusStageState;
-  if (!stage || !content) {
-    await presenter(sourceItem);
-    return;
-  }
-
-  const mode = options?.mode || "";
-  const hold = typeof options?.hold === "number" ? options.hold : 360;
-
-  stage.setAttribute("aria-hidden", "false");
-  stage.dataset.mode = mode;
-  stage.classList.remove("engaged", "retreating");
-  stage.classList.add("visible");
-
-  content.innerHTML = "";
-  const focusItem = document.createElement("div");
-  focusItem.className = "focus-item";
-  content.appendChild(focusItem);
-
-  // Force layout to ensure animation triggers
-  void focusItem.offsetWidth;
-
-  stage.classList.add("engaged");
-
-  await presenter(focusItem);
-
-  if (hold > 0) {
-    await controlledDelay(hold);
-  }
-
-  stage.classList.remove("engaged");
-  stage.classList.add("retreating");
-  await controlledDelay(260);
-
-  stage.classList.remove("visible", "retreating");
-  stage.removeAttribute("data-mode");
-  stage.setAttribute("aria-hidden", "true");
-  content.innerHTML = "";
 }
 
 function extractText(element) {
@@ -302,16 +198,14 @@ function extractText(element) {
   return cleaned.join("\n");
 }
 
-async function typeText(element, text, speed, options = {}) {
-  const { activate = true, clear = true } = options;
+async function typeText(element, text, speed) {
   element.classList.add("typing");
-  if (activate && element.classList.contains("stream-item")) {
+  if (element.classList.contains("stream-item")) {
     element.classList.add("active");
   }
 
-  if (clear) {
-    element.innerHTML = "";
-  }
+  // Clear any existing nodes before typing
+  element.innerHTML = "";
 
   let currentNode = document.createTextNode("");
   element.appendChild(currentNode);
@@ -332,30 +226,6 @@ async function typeText(element, text, speed, options = {}) {
   }
 
   element.classList.remove("typing");
-}
-
-function setElementText(element, text) {
-  element.innerHTML = "";
-  const segments = text.split("\n");
-
-  segments.forEach((segment, index) => {
-    if (index > 0) {
-      element.appendChild(document.createElement("br"));
-    }
-
-    element.appendChild(document.createTextNode(segment));
-  });
-}
-
-function stripStreamClasses(root) {
-  if (!root) {
-    return;
-  }
-
-  const nodes = [root, ...root.querySelectorAll(".stream-item")];
-  nodes.forEach((node) => {
-    node.classList.remove("stream-item", "active", "typing");
-  });
 }
 
 function controlledDelay(duration) {
