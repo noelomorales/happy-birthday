@@ -3,283 +3,203 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Top Secret Birthday Briefing</title>
+    <title>Commute Tracker</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <div id="intro" class="active" aria-live="polite">
-      <div class="scan-field" aria-hidden="true">
-        <div class="scan-beam"></div>
-      </div>
-      <div class="intro-terminal" role="presentation">
-        <div class="terminal-header">SECURE ACCESS PORTAL // NODE 07</div>
-        <div class="terminal-body">
-          <pre class="terminal-log" role="log" aria-live="polite"></pre>
+    <main class="app">
+      <header class="app-header">
+        <div>
+          <p class="eyebrow">Shuttle Commute Tracker</p>
+          <h1>Make your check-ins fast and automatic.</h1>
+          <p class="subhead">
+            Pick a route, tap “I got on the bus,” and we’ll handle deltas and
+            reminders.
+          </p>
         </div>
-        <div class="terminal-status">
-          <p class="intro-text">Synchronizing clandestine biometrics...</p>
-          <p class="intro-subtext">Maintain posture for vein-map sweep</p>
+        <div class="header-actions">
+          <button class="secondary" id="export-data" type="button">
+            Export CSV
+          </button>
+          <button class="ghost" id="clear-data" type="button">
+            Clear history
+          </button>
+          <div class="mode-toggle">
+            <label class="toggle">
+              <input id="mode-toggle" type="checkbox" />
+              <span>Test mode</span>
+            </label>
+            <span class="toggle-hint" id="mode-label">Live data</span>
+          </div>
         </div>
-      </div>
-    </div>
-
-    <button id="debug-pause" type="button" aria-pressed="false">
-      Pause Timeline
-    </button>
-
-    <div id="self-destruct" role="status" aria-live="assertive">
-      <div class="self-destruct-panel">
-        <p class="self-destruct-heading">!!! ALERT !!!</p>
-        <p>
-          This message will self-destruct in
-          <span class="self-destruct-countdown">5</span> seconds.
-        </p>
-      </div>
-    </div>
-
-    <div id="focus-stage" aria-hidden="true">
-      <div class="focus-backdrop"></div>
-      <div class="focus-shell">
-        <div class="focus-content"></div>
-      </div>
-    </div>
-
-    <div id="explosion" aria-hidden="true">
-      <div class="explosion-flash"></div>
-      <div class="explosion-core"></div>
-      <div class="explosion-ring"></div>
-      <div class="shockwave"></div>
-      <div class="flame-field">
-        <div class="flame layer-1"></div>
-        <div class="flame layer-2"></div>
-        <div class="flame layer-3"></div>
-      </div>
-      <div class="ember-field">
-        <span></span>
-        <span></span>
-        <span></span>
-        <span></span>
-        <span></span>
-        <span></span>
-      </div>
-      <div class="particle-halo" aria-hidden="true"></div>
-      <div class="debris-field" aria-hidden="true">
-        <span></span>
-        <span></span>
-        <span></span>
-        <span></span>
-        <span></span>
-        <span></span>
-        <span></span>
-        <span></span>
-      </div>
-      <div class="spark-trails" aria-hidden="true">
-        <span></span>
-        <span></span>
-        <span></span>
-        <span></span>
-        <span></span>
-        <span></span>
-      </div>
-      <div class="smoke"></div>
-    </div>
-
-    <main id="dossier" aria-label="Birthday Dossier">
-      <header class="dossier-header">
-        <div class="header-label">CLASSIFIED DOSSIER</div>
-        <h1>Welcome, Agent Benito</h1>
-        <p class="header-meta">
-          Clearance Level: Charlie • File Reference: BRD-0425 • For Your Eyes Only
-        </p>
       </header>
+      <div class="mode-banner" id="mode-banner" aria-live="polite"></div>
 
-      <section class="dossier-overview">
-        <div class="overview-column">
-          <div
-            class="overview-report identity-greeting stream-item"
-            data-stream-order="1"
-            data-stream-type="text"
-            data-stream-speed="26"
-            data-focus-mode="brief"
-            data-focus-title="Identity Confirmed"
-            data-focus-image="assets/images/IMG_2387.jpeg"
-          >
-            Identity matrix aligned. Welcome, Agent Benito.
+      <section class="tracker-grid">
+        <article class="panel">
+          <div class="panel-header">
+            <h2>Plan today’s commute</h2>
+            <p>Pick a route to auto-fill expected pickup/drop-off times.</p>
           </div>
-          <div
-            class="overview-report location-readout stream-item"
-            data-stream-order="3"
-            data-stream-type="text"
-            data-stream-speed="22"
-            data-focus-mode="brief"
-            data-focus-title="Current Location"
-          >
-            Current Location:
-            <span
-              id="current-location"
-              data-preserve-node
-              data-locating-text="Triangulating coordinates…"
-              data-denied-text="Permission denied. Unable to confirm location."
-              data-unavailable-text="Location unavailable. Awaiting manual input."
-            >
-              Triangulating coordinates…
-            </span>
+          <form class="route-form" id="route-form">
+            <label>
+              Date
+              <input id="trip-date" name="trip-date" type="date" required />
+            </label>
+            <label>
+              Day of week
+              <select id="trip-day" name="trip-day">
+                <option value="Tuesday">Tuesday</option>
+                <option value="Wednesday">Wednesday</option>
+                <option value="Thursday">Thursday</option>
+              </select>
+            </label>
+            <label>
+              Route
+              <select id="route-select" name="route-select" required></select>
+            </label>
+            <div class="expected-times">
+              <div>
+                <span>Expected pickup</span>
+                <strong id="expected-pickup">—</strong>
+              </div>
+              <div>
+                <span>Expected arrival</span>
+                <strong id="expected-arrival">—</strong>
+              </div>
+            </div>
+            <label class="full-width">
+              Notes
+              <input
+                id="trip-notes"
+                name="trip-notes"
+                type="text"
+                placeholder="Optional notes (stop, weather, etc.)"
+              />
+            </label>
+          </form>
+        </article>
+
+        <article class="panel panel-highlight" id="checkin-panel">
+          <div class="panel-header">
+            <h2>Quick check-in</h2>
+            <p>Single-tap updates for pickup and arrival.</p>
           </div>
+          <div class="checkin-actions">
+            <button class="primary" id="pickup-now" type="button">
+              I got on the bus
+            </button>
+            <button class="secondary" id="arrival-now" type="button">
+              I arrived now
+            </button>
+          </div>
+          <div class="delta-cards">
+            <div class="delta-card">
+              <span>Pickup delta</span>
+              <strong id="pickup-delta">—</strong>
+              <small id="pickup-time">Awaiting check-in</small>
+            </div>
+            <div class="delta-card">
+              <span>Arrival delta</span>
+              <strong id="arrival-delta">—</strong>
+              <small id="arrival-time">Awaiting check-in</small>
+            </div>
+          </div>
+          <div class="status-chip" id="reminder-status" aria-live="polite">
+            Select a route to schedule your arrival reminder.
+          </div>
+          <div class="reminder" id="arrival-reminder" aria-live="polite">
+            <p>
+              It’s the expected arrival time. Have you arrived at the office?
+            </p>
+            <div class="reminder-actions">
+              <button class="primary" id="arrival-yes" type="button">Yes</button>
+              <button class="secondary" id="arrival-no" type="button">Not yet</button>
+            </div>
+          </div>
+          <div class="reminder" id="arrival-capture" aria-live="polite">
+            <p>Tap when you actually arrive.</p>
+            <button class="primary" id="arrival-capture-now" type="button">
+              Record arrival time
+            </button>
+          </div>
+        </article>
+      </section>
+
+      <section class="panel history-panel">
+        <div class="panel-header">
+          <div>
+            <h2>Recent commute log</h2>
+            <p>Automatically saved locally in your browser.</p>
+          </div>
+          <div class="stats" id="summary-stats"></div>
         </div>
-        <div class="overview-column dossier-media">
-          <figure
-            class="photo-card stream-item"
-            data-label="Surveillance Capture A"
-            data-stream-order="2"
-            data-stream-type="media"
-            data-focus-mode="media"
-            data-focus-title="Capture A"
-          >
-            <img
-              src="assets/images/IMG_2387.jpeg"
-              alt="Primary subject portrait"
-              data-random-image="dossier"
-            />
-          </figure>
-          <figure
-            class="photo-card stream-item"
-            data-label="Field Report B"
-            data-stream-order="4"
-            data-stream-type="media"
-            data-focus-mode="media"
-            data-focus-title="Capture B"
-          >
-            <img
-              src="assets/images/IMG_2548.jpeg"
-              alt="Subject with allies"
-              data-random-image="dossier"
-            />
-          </figure>
-          <figure
-            class="photo-card stream-item"
-            data-label="Mission Evidence C"
-            data-stream-order="5"
-            data-stream-type="media"
-            data-focus-mode="media"
-            data-focus-title="Capture C"
-          >
-            <img
-              src="assets/images/IMG_2646.jpeg"
-              alt="Memorable mission moment"
-              data-random-image="dossier"
-            />
-          </figure>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Route</th>
+                <th>Expected pickup</th>
+                <th>Actual pickup</th>
+                <th>Pickup delta</th>
+                <th>Expected arrival</th>
+                <th>Actual arrival</th>
+                <th>Arrival delta</th>
+                <th>Total time</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody id="history-body"></tbody>
+          </table>
         </div>
       </section>
 
-      <section class="intel-grid">
-        <article
-          class="intel-card stream-item"
-          data-stream-type="module"
-          data-stream-order="5"
-          data-focus-mode="module"
-          data-focus-title="Mission Objectives"
-        >
-          <h3>Mission Objectives</h3>
+      <section class="panel schedule-panel">
+        <div class="panel-header">
+          <h2>Morning schedule snapshots</h2>
           <p>
-            Your mission, should you choose to accept it, is to arrange
-            immediate evac for critical supplies: merlot, cabernet, and a
-            Revana class package.
+            A quick reference to the Tuesday/Wednesday/Thursday morning schedule
+            and route badges from your screenshots.
           </p>
-        </article>
-        <article
-          class="intel-card stream-item"
-          data-stream-type="module"
-          data-stream-order="6"
-          data-focus-mode="module"
-          data-focus-title="Incoming Transmission"
-        >
-          <h3>Incoming Transmission</h3>
-          <p>🍷</p>
-          <p>
-            My favorite father, happy birthday. Congratulations on reaching
-            another year of excellence. You inspire me to work hard, and relax
-            hard, and appreciate the good people in my life. I give you this, a
-            secure location to ship anything (and especially wine) to, without
-            having to worry about its security (or my schedule).
-          </p>
-          <p>
-            To this address, you can send anything you want, at any time. Wine,
-            Christmas gifts, wine, golf balls, surprise gifts for me, wine… you
-            get the idea. Hope this simplifies your orders going forward until
-            the US figures out how to ship to PR, and looking forward to
-            sharing some of your new favorites together
-          </p>
-          <p>Love, Noel</p>
-        </article>
-        <article
-          class="intel-card map-card map-card--logistics stream-item"
-          data-stream-type="module"
-          data-stream-order="7"
-          data-focus-mode="module"
-          data-focus-title="Gift Logistics"
-        >
-          <h3>Gift Logistics</h3>
-          <p>
-            Daily-signed secure drop ready for incoming packages:<br />3141
-            Mission St.<br />Box 113<br />San Francisco, CA 94110
-          </p>
-          <div class="address-actions">
-            <button id="copy-address" type="button" class="copy-address-button">
-              Copy Address
-            </button>
-          </div>
-          <div class="map-frame">
-            <div class="map-overlay" aria-hidden="true">
-              <div class="overlay-grid"></div>
-              <div class="overlay-noise"></div>
-              <div class="overlay-pulse"></div>
-              <div class="overlay-target"></div>
-              <div class="overlay-sweep"></div>
-              <div class="overlay-halo"></div>
-            </div>
-            <iframe
-              title="Mission District Tactical Map"
-              src="https://maps.google.com/maps?q=3141%20Mission%20St%2C%20San%20Francisco%2C%20CA%2094110&output=embed"
-              allowfullscreen
-              loading="lazy"
-              referrerpolicy="no-referrer-when-downgrade"
-            ></iframe>
-          </div>
-          <div class="map-actions">
-            <button
-              id="copy-map-link"
-              type="button"
-              class="copy-address-button copy-map-button"
-              data-map-url="https://maps.google.com/?q=3141+Mission+St,+San+Francisco,+CA+94110"
-            >
-              Copy Map Link
-            </button>
-          </div>
-        </article>
+        </div>
+        <div class="schedule-tabs" role="tablist">
+          <button class="tab active" data-day="Tuesday" type="button">
+            Tuesday
+          </button>
+          <button class="tab" data-day="Wednesday" type="button">
+            Wednesday
+          </button>
+          <button class="tab" data-day="Thursday" type="button">
+            Thursday
+          </button>
+        </div>
+        <div class="schedule-content" id="schedule-content"></div>
       </section>
     </main>
 
-    <div id="fuse">
-      <div class="fuse-track">
-        <div class="fuse-progress"></div>
-        <div class="spark"></div>
+    <template id="schedule-template">
+      <div class="route-badges"></div>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Stop</th>
+              <th>Time</th>
+              <th>Route</th>
+              <th>Route badge</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
       </div>
-    </div>
-
-    <div id="image-preview" aria-hidden="true">
-      <div class="preview-backdrop" data-preview-close></div>
-      <figure class="preview-frame" role="dialog" aria-modal="true">
-        <img src="" alt="" />
-        <figcaption class="preview-caption"></figcaption>
-      </figure>
-    </div>
+    </template>
 
     <script src="script.js"></script>
   </body>
