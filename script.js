@@ -1,2133 +1,849 @@
-const IMAGE_MANIFEST_URL =
-  (typeof window !== "undefined" && window.IMAGE_MANIFEST_URL) ||
-  "assets/images/manifest.json";
-const IMAGE_QUEUE_STORAGE_KEY =
-  (typeof window !== "undefined" && window.IMAGE_QUEUE_STORAGE_KEY) ||
-  "hb-dossier-image-queue";
+const STORAGE_KEY = "commute-tracker-history";
+const ACTIVE_TRIP_KEY = "commute-tracker-active";
+const MODE_KEY = "commute-tracker-mode";
+const MODES = Object.freeze({
+  live: "live",
+  test: "test",
+});
 
-const TERMINAL_BOOT_LINES = [
-  ">> BORICUA CONSOLE ENGAGED",
-  ">> BACKCHANNEL CIRCUITS SEALED",
-  ">> PHRASEBOOK AUTH CIPHERS VERIFIED",
-  ">> BIOMETRIC VEINSCAN LOCK CONFIRMED",
-  ">> HOLD STEADY FOR IDENTITY SWEEP",
+const ROUTES = [
+  {
+    code: "VM0730",
+    label: "VM 07:30",
+    badge: { text: "MA", color: "#1d4ed8" },
+    expectedPickup: "07:59",
+    expectedArrival: "09:02",
+  },
+  {
+    code: "VM0745",
+    label: "VM 07:45",
+    badge: { text: "WF", color: "#111827" },
+    expectedPickup: "08:18",
+    expectedArrival: "09:20",
+  },
+  {
+    code: "VM0828",
+    label: "VM 08:28",
+    badge: { text: "AP", color: "#16a34a" },
+    expectedPickup: "09:00",
+    expectedArrival: "10:02",
+  },
+  {
+    code: "ME0915",
+    label: "ME 09:15",
+    badge: { text: "MA", color: "#0f766e" },
+    expectedPickup: "09:28",
+    expectedArrival: "10:25",
+  },
+  {
+    code: "DC0735",
+    label: "DC 07:35",
+    badge: { text: "SU", color: "#b91c1c" },
+    expectedPickup: "07:56",
+    expectedArrival: "09:20",
+  },
 ];
 
-const TERMINAL_CHAR_DELAY = 12;
-const TERMINAL_LINE_DELAY = 90;
-const SCAN_PREP_DELAY = 160;
-const SCAN_DURATION = 1600;
-const POST_CONFIRM_DELAY = 900;
+const SCHEDULES = {
+  Tuesday: [
+    {
+      stop: "Lombard at Scott AM",
+      time: "05:42",
+      route: "VM0542",
+      badge: { text: "MA", color: "#1d4ed8" },
+    },
+    {
+      stop: "Gough at Geary",
+      time: "05:49",
+      route: "VM0542",
+      badge: { text: "MA", color: "#1d4ed8" },
+    },
+    {
+      stop: "S Van Ness at Mission",
+      time: "05:55",
+      route: "VM0542",
+      badge: { text: "MA", color: "#1d4ed8" },
+    },
+    {
+      stop: "Valencia at 25th",
+      time: "06:06",
+      route: "VM0542",
+      badge: { text: "MA", color: "#1d4ed8" },
+    },
+    {
+      stop: "San Jose at Valley",
+      time: "06:08",
+      route: "VM0542",
+      badge: { text: "MA", color: "#1d4ed8" },
+    },
+    {
+      stop: "Mariani Transit Center",
+      time: "06:57",
+      route: "VM0542",
+      badge: { text: "MA", color: "#1d4ed8" },
+    },
+    {
+      stop: "Apple Park Bay 6",
+      time: "07:07",
+      route: "VM0542",
+      badge: { text: "MA", color: "#1d4ed8" },
+    },
+  ],
+  Wednesday: [
+    {
+      stop: "Lombard at Scott AM",
+      time: "07:38",
+      route: "VE0738",
+      badge: { text: "CU", color: "#7c3aed" },
+    },
+    {
+      stop: "Lombard at Franklin",
+      time: "07:43",
+      route: "VE0738",
+      badge: { text: "CU", color: "#7c3aed" },
+    },
+    {
+      stop: "Gough at Geary",
+      time: "07:50",
+      route: "VE0738",
+      badge: { text: "CU", color: "#7c3aed" },
+    },
+    {
+      stop: "S Van Ness at Mission",
+      time: "08:00",
+      route: "VE0738",
+      badge: { text: "CU", color: "#7c3aed" },
+    },
+    {
+      stop: "Valencia at 25th",
+      time: "08:18",
+      route: "VE0738",
+      badge: { text: "CU", color: "#7c3aed" },
+    },
+    {
+      stop: "San Jose at Valley",
+      time: "08:21",
+      route: "VE0738",
+      badge: { text: "CU", color: "#7c3aed" },
+    },
+    {
+      stop: "Apple Park Bay 6",
+      time: "09:15",
+      route: "VE0738",
+      badge: { text: "CU", color: "#7c3aed" },
+    },
+  ],
+  Thursday: [
+    {
+      stop: "Lombard at Scott AM",
+      time: "07:55",
+      route: "ME0755",
+      badge: { text: "SU", color: "#b45309" },
+    },
+    {
+      stop: "Lombard at Franklin",
+      time: "08:02",
+      route: "ME0755",
+      badge: { text: "SU", color: "#b45309" },
+    },
+    {
+      stop: "Gough at Geary",
+      time: "08:12",
+      route: "ME0755",
+      badge: { text: "SU", color: "#b45309" },
+    },
+    {
+      stop: "S Van Ness at Mission",
+      time: "08:22",
+      route: "ME0755",
+      badge: { text: "SU", color: "#b45309" },
+    },
+    {
+      stop: "Valencia at 25th",
+      time: "08:37",
+      route: "ME0755",
+      badge: { text: "SU", color: "#b45309" },
+    },
+    {
+      stop: "Mariani Transit Center",
+      time: "09:27",
+      route: "ME0755",
+      badge: { text: "SU", color: "#b45309" },
+    },
+    {
+      stop: "Apple Park Bay 6",
+      time: "09:37",
+      route: "ME0755",
+      badge: { text: "SU", color: "#b45309" },
+    },
+  ],
+};
 
-const INTRO_CONFIRM_TIME = Math.round(
-  calculateTerminalBootDuration(
-    TERMINAL_BOOT_LINES,
-    TERMINAL_CHAR_DELAY,
-    TERMINAL_LINE_DELAY
-  ) +
-    SCAN_PREP_DELAY +
-    SCAN_DURATION
+const scheduleContent = document.getElementById("schedule-content");
+const scheduleTemplate = document.getElementById("schedule-template");
+const routeSelect = document.getElementById("route-select");
+const expectedPickupEl = document.getElementById("expected-pickup");
+const expectedArrivalEl = document.getElementById("expected-arrival");
+const pickupNowBtn = document.getElementById("pickup-now");
+const arrivalNowBtn = document.getElementById("arrival-now");
+const arrivalReminder = document.getElementById("arrival-reminder");
+const arrivalCapture = document.getElementById("arrival-capture");
+const arrivalYesBtn = document.getElementById("arrival-yes");
+const arrivalNoBtn = document.getElementById("arrival-no");
+const arrivalCaptureBtn = document.getElementById("arrival-capture-now");
+const pickupDeltaEl = document.getElementById("pickup-delta");
+const arrivalDeltaEl = document.getElementById("arrival-delta");
+const pickupTimeEl = document.getElementById("pickup-time");
+const arrivalTimeEl = document.getElementById("arrival-time");
+const reminderStatus = document.getElementById("reminder-status");
+const modeToggle = document.getElementById("mode-toggle");
+const modeLabel = document.getElementById("mode-label");
+const modeBanner = document.getElementById("mode-banner");
+const historyBody = document.getElementById("history-body");
+const summaryStats = document.getElementById("summary-stats");
+const tripDate = document.getElementById("trip-date");
+const tripDay = document.getElementById("trip-day");
+const tripNotes = document.getElementById("trip-notes");
+const exportButton = document.getElementById("export-data");
+const clearButton = document.getElementById("clear-data");
+
+let arrivalTimeout = null;
+let currentMode = normalizeMode(
+  typeof localStorage !== "undefined" ? localStorage.getItem(MODE_KEY) : null
 );
-const INTRO_COMPLETE_TIME = INTRO_CONFIRM_TIME + POST_CONFIRM_DELAY;
-const FUSE_DURATION = 45000;
-const SELF_DESTRUCT_WARNING = 5000;
-const POST_EXPLOSION_TRANSMISSION_DELAY = 3200;
-const DEFAULT_TYPE_SPEED = 14;
-const DEFAULT_FOCUS_HOLD = 650;
-const ADDRESS_COPY_TEXT = "3141 Mission St.\nBox 113\nSan Francisco, CA 94110";
-const MAP_LOCATION_URL =
-  (typeof window !== "undefined" && window.MAP_LOCATION_URL) ||
-  "https://maps.google.com/?q=3141+Mission+St,+San+Francisco,+CA+94110";
+let activeTrip = null;
 
-const LOCATION_STATE = Object.freeze({
-  locating: "locating",
-  denied: "denied",
-  unavailable: "unavailable",
-  resolved: "resolved",
-  cancelled: "cancelled",
-});
+function normalizeMode(value) {
+  if (value === MODES.test) {
+    return MODES.test;
+  }
+  return MODES.live;
+}
 
-const DEFAULT_LOCATION_MESSAGES = Object.freeze({
-  locating: "Triangulating coordinates…",
-  denied: "Permission denied. Unable to confirm location.",
-  unavailable: "Location unavailable. Awaiting manual input.",
-});
+function getStorageKey(baseKey, mode = currentMode) {
+  if (mode === MODES.test) {
+    return `${baseKey}-test`;
+  }
+  return baseKey;
+}
 
-const DEFAULT_POSITION_OPTIONS = Object.freeze({
-  enableHighAccuracy: false,
-  timeout: 15000,
-  maximumAge: 300000,
-});
+function setFormDisabled(disabled) {
+  [tripDate, tripDay, routeSelect, tripNotes].forEach((field) => {
+    if (field) {
+      field.disabled = disabled;
+    }
+  });
+}
 
-const PRESERVED_CHILDREN = new WeakMap();
+function setReminderStatus(message) {
+  if (!reminderStatus) return;
+  reminderStatus.textContent = message;
+}
 
-function formatCoordinate(value, positiveSuffix, negativeSuffix) {
-  const numeric = Number(value);
-  if (!Number.isFinite(numeric)) {
+function setModeUI(mode) {
+  if (modeToggle) {
+    modeToggle.checked = mode === MODES.test;
+  }
+  if (modeLabel) {
+    modeLabel.textContent =
+      mode === MODES.test ? "Test data only" : "Live data";
+  }
+  if (modeBanner) {
+    if (mode === MODES.test) {
+      modeBanner.textContent =
+        "Test mode is ON. Entries are saved to a separate test log.";
+      modeBanner.classList.add("active");
+    } else {
+      modeBanner.textContent = "";
+      modeBanner.classList.remove("active");
+    }
+  }
+}
+
+function setTodayDate() {
+  const today = new Date();
+  const offset = today.getTimezoneOffset();
+  const local = new Date(today.getTime() - offset * 60000);
+  tripDate.value = local.toISOString().slice(0, 10);
+}
+
+function formatTime(date) {
+  return date.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function formatShortTime(value) {
+  if (!value) return "—";
+  const [hours, minutes] = value.split(":");
+  const date = new Date();
+  date.setHours(Number(hours), Number(minutes || 0), 0, 0);
+  return formatTime(date);
+}
+
+function parseTimeToDate(value) {
+  if (!value) return null;
+  const [hours, minutes] = value.split(":");
+  const date = new Date();
+  date.setHours(Number(hours), Number(minutes || 0), 0, 0);
+  return date;
+}
+
+function formatDelta(expected, actual) {
+  if (!expected || !actual) return "—";
+  const diffMs = actual.getTime() - expected.getTime();
+  const minutes = Math.round(diffMs / 60000);
+  if (minutes === 0) return "On time";
+  const sign = minutes > 0 ? "+" : "";
+  return `${sign}${minutes}m`;
+}
+
+function formatDuration(start, end) {
+  if (!start || !end) return "—";
+  const diffMs = end.getTime() - start.getTime();
+  const totalMinutes = Math.round(diffMs / 60000);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = Math.abs(totalMinutes % 60);
+  if (hours <= 0) return `${minutes}m`;
+  return `${hours}h ${minutes}m`;
+}
+
+function loadHistory() {
+  const raw = localStorage.getItem(getStorageKey(STORAGE_KEY));
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    return [];
+  }
+}
+
+function saveHistory(entries) {
+  localStorage.setItem(
+    getStorageKey(STORAGE_KEY),
+    JSON.stringify(entries)
+  );
+}
+
+function loadActiveTrip() {
+  const raw = localStorage.getItem(getStorageKey(ACTIVE_TRIP_KEY));
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw);
+  } catch (error) {
     return null;
   }
-
-  const suffix = numeric >= 0 ? positiveSuffix : negativeSuffix;
-  const magnitude = Math.abs(numeric).toFixed(3);
-  return `${magnitude}° ${suffix}`;
 }
 
-function formatCoordinates(latitude, longitude) {
-  const latPart = formatCoordinate(latitude, "N", "S");
-  const lonPart = formatCoordinate(longitude, "E", "W");
-
-  if (!latPart || !lonPart) {
-    return "";
+function saveActiveTrip(data) {
+  if (!data) {
+    localStorage.removeItem(getStorageKey(ACTIVE_TRIP_KEY));
+    activeTrip = null;
+    return;
   }
-
-  return `${latPart}, ${lonPart}`;
+  activeTrip = data;
+  localStorage.setItem(
+    getStorageKey(ACTIVE_TRIP_KEY),
+    JSON.stringify(data)
+  );
 }
 
-function resolveDatasetMessage(element, key, fallback) {
-  if (!element || !element.dataset) {
-    return fallback;
-  }
+activeTrip = loadActiveTrip();
 
-  const datasetKey = `${key}Text`;
-  const value = element.dataset[datasetKey];
-  if (typeof value === "string") {
-    const trimmed = value.trim();
-    if (trimmed.length > 0) {
-      return trimmed;
+function populateRoutes() {
+  routeSelect.innerHTML = "";
+  const placeholder = document.createElement("option");
+  placeholder.value = "";
+  placeholder.textContent = "Select a route";
+  placeholder.disabled = true;
+  placeholder.selected = true;
+  routeSelect.appendChild(placeholder);
+
+  ROUTES.forEach((route) => {
+    const option = document.createElement("option");
+    option.value = route.code;
+    option.textContent = `${route.code} • ${route.label}`;
+    routeSelect.appendChild(option);
+  });
+}
+
+function updateExpectedTimes() {
+  const selected = ROUTES.find((route) => route.code === routeSelect.value);
+  if (!selected) {
+    expectedPickupEl.textContent = "—";
+    expectedArrivalEl.textContent = "—";
+    setReminderStatus("Select a route to schedule your arrival reminder.");
+    return;
+  }
+  expectedPickupEl.textContent = formatShortTime(selected.expectedPickup);
+  expectedArrivalEl.textContent = formatShortTime(selected.expectedArrival);
+  setReminderStatus(
+    `Arrival reminder set for ${formatShortTime(selected.expectedArrival)}.`
+  );
+}
+
+function renderSchedule(day) {
+  if (!scheduleTemplate || !scheduleContent) return;
+  scheduleContent.innerHTML = "";
+  const clone = scheduleTemplate.content.cloneNode(true);
+  const badgeContainer = clone.querySelector(".route-badges");
+  const tbody = clone.querySelector("tbody");
+
+  const entries = SCHEDULES[day] || [];
+  entries.forEach((entry) => {
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td>${entry.stop}</td>
+      <td>${formatShortTime(entry.time)}</td>
+      <td>${entry.route}</td>
+      <td>
+        <span class="badge" style="--badge-color:${entry.badge.color}">
+          ${entry.badge.text}
+        </span>
+      </td>
+    `;
+    tbody.appendChild(row);
+  });
+
+  const badges = new Map();
+  entries.forEach((entry) => {
+    if (!badges.has(entry.route)) {
+      badges.set(entry.route, entry.badge);
     }
-  }
+  });
 
-  return fallback;
+  badges.forEach((badge, route) => {
+    const chip = document.createElement("span");
+    chip.className = "route-chip";
+    chip.innerHTML = `
+      <span class="badge" style="--badge-color:${badge.color}">
+        ${badge.text}
+      </span>
+      <span>${route}</span>
+    `;
+    badgeContainer.appendChild(chip);
+  });
+
+  scheduleContent.appendChild(clone);
 }
 
-function shouldTreatAsDenied(error) {
-  if (!error) {
-    return false;
-  }
-
-  const code = error.code;
-  const deniedCode =
-    typeof error.PERMISSION_DENIED === "number"
-      ? error.PERMISSION_DENIED
-      : 1;
-
-  if (code === deniedCode || code === String(deniedCode)) {
-    return true;
-  }
-
-  if (typeof error.message === "string") {
-    return /denied/i.test(error.message);
-  }
-
-  return false;
+function updateTabs(activeDay) {
+  document.querySelectorAll(".tab").forEach((tab) => {
+    const isActive = tab.dataset.day === activeDay;
+    tab.classList.toggle("active", isActive);
+  });
 }
 
-async function resolvePositionLabel(coords, reverseGeocode, fallbackMessage) {
-  if (!coords) {
-    return fallbackMessage;
+function resetCheckinUI() {
+  pickupDeltaEl.textContent = "—";
+  arrivalDeltaEl.textContent = "—";
+  pickupTimeEl.textContent = "Awaiting check-in";
+  arrivalTimeEl.textContent = "Awaiting check-in";
+  arrivalReminder.classList.remove("visible");
+  arrivalCapture.classList.remove("visible");
+  if (arrivalTimeout) {
+    clearTimeout(arrivalTimeout);
   }
+}
 
-  const payload = {
-    latitude: coords.latitude,
-    longitude: coords.longitude,
+function scheduleArrivalReminder(expectedArrival) {
+  if (arrivalTimeout) {
+    clearTimeout(arrivalTimeout);
+  }
+  if (!expectedArrival) return;
+
+  const now = new Date();
+  const delay = expectedArrival.getTime() - now.getTime();
+  if (delay <= 0) {
+    arrivalReminder.classList.add("visible");
+    return;
+  }
+  setReminderStatus(
+    `We’ll remind you around ${formatTime(expectedArrival)} to confirm arrival.`
+  );
+  arrivalTimeout = setTimeout(() => {
+    arrivalReminder.classList.add("visible");
+  }, delay);
+}
+
+function buildTripBase() {
+  const route = ROUTES.find((item) => item.code === routeSelect.value);
+  if (!route) return null;
+  const expectedPickup = parseTimeToDate(route.expectedPickup);
+  const expectedArrival = parseTimeToDate(route.expectedArrival);
+  return {
+    date: tripDate.value,
+    day: tripDay.value,
+    route: route.code,
+    expectedPickup: expectedPickup?.toISOString() || null,
+    expectedArrival: expectedArrival?.toISOString() || null,
+    pickupActual: null,
+    arrivalActual: null,
+    notes: tripNotes.value.trim(),
   };
-
-  if (typeof reverseGeocode === "function") {
-    try {
-      const label = await reverseGeocode(payload);
-      if (typeof label === "string") {
-        const trimmed = label.trim();
-        if (trimmed.length > 0) {
-          return trimmed;
-        }
-      }
-    } catch (error) {
-      console.warn("Reverse geocoding failed", error);
-    }
-  }
-
-  const formatted = formatCoordinates(payload.latitude, payload.longitude);
-  if (formatted && formatted.length > 0) {
-    return formatted;
-  }
-
-  return fallbackMessage;
 }
 
-function initializeGeolocation(options = {}) {
-  const doc =
-    options.document || (typeof document !== "undefined" ? document : null);
-  const element =
-    options.element ||
-    (doc && typeof doc.getElementById === "function"
-      ? doc.getElementById("current-location")
-      : null);
+function updateDeltas() {
+  if (!activeTrip) {
+    resetCheckinUI();
+    return;
+  }
 
-  const navigatorGeolocation =
-    typeof navigator !== "undefined" ? navigator.geolocation : null;
-  const geolocation =
-    options.geolocation &&
-    typeof options.geolocation.getCurrentPosition === "function"
-      ? options.geolocation
-      : navigatorGeolocation;
+  const expectedPickup = activeTrip.expectedPickup
+    ? new Date(activeTrip.expectedPickup)
+    : null;
+  const expectedArrival = activeTrip.expectedArrival
+    ? new Date(activeTrip.expectedArrival)
+    : null;
+  const pickupActual = activeTrip.pickupActual
+    ? new Date(activeTrip.pickupActual)
+    : null;
+  const arrivalActual = activeTrip.arrivalActual
+    ? new Date(activeTrip.arrivalActual)
+    : null;
 
-  let reverseGeocode =
-    typeof options.reverseGeocode === "function"
-      ? options.reverseGeocode
+  pickupDeltaEl.textContent = formatDelta(expectedPickup, pickupActual);
+  arrivalDeltaEl.textContent = formatDelta(expectedArrival, arrivalActual);
+  pickupTimeEl.textContent = pickupActual
+    ? `Picked up at ${formatTime(pickupActual)}`
+    : "Awaiting check-in";
+  arrivalTimeEl.textContent = arrivalActual
+    ? `Arrived at ${formatTime(arrivalActual)}`
+    : "Awaiting check-in";
+}
+
+function saveTripToHistory() {
+  if (!activeTrip) return;
+  const history = loadHistory();
+  history.unshift(activeTrip);
+  saveHistory(history.slice(0, 50));
+  saveActiveTrip(null);
+  renderHistory();
+  resetCheckinUI();
+  setFormDisabled(false);
+  setReminderStatus("Select a route to schedule your arrival reminder.");
+}
+
+function renderHistory() {
+  const history = loadHistory();
+  historyBody.innerHTML = "";
+
+  history.forEach((entry) => {
+    const expectedPickup = entry.expectedPickup
+      ? new Date(entry.expectedPickup)
+      : null;
+    const expectedArrival = entry.expectedArrival
+      ? new Date(entry.expectedArrival)
+      : null;
+    const pickupActual = entry.pickupActual
+      ? new Date(entry.pickupActual)
+      : null;
+    const arrivalActual = entry.arrivalActual
+      ? new Date(entry.arrivalActual)
       : null;
 
-  if (!reverseGeocode && typeof window !== "undefined") {
-    const candidate = window.resolveAgentLocation;
-    if (typeof candidate === "function") {
-      reverseGeocode = candidate;
-    }
-  }
-
-  if (!element) {
-    return {
-      ready: Promise.resolve({ state: LOCATION_STATE.unavailable, message: "" }),
-      cancel() {},
-    };
-  }
-
-  if (!element.hasAttribute("aria-live")) {
-    element.setAttribute("aria-live", "polite");
-  }
-
-  const messages = {
-    locating: resolveDatasetMessage(
-      element,
-      "locating",
-      DEFAULT_LOCATION_MESSAGES.locating
-    ),
-    denied: resolveDatasetMessage(
-      element,
-      "denied",
-      DEFAULT_LOCATION_MESSAGES.denied
-    ),
-    unavailable: resolveDatasetMessage(
-      element,
-      "unavailable",
-      DEFAULT_LOCATION_MESSAGES.unavailable
-    ),
-  };
-
-  const fallbackMessage = resolveDatasetMessage(
-    element,
-    "fallback",
-    messages.unavailable
-  );
-
-  const hostElement = element.parentElement;
-  const initialSibling = element.nextSibling;
-
-  const ensureAttached = () => {
-    if (element.isConnected || !hostElement) {
-      return;
-    }
-
-    if (initialSibling && initialSibling.parentNode === hostElement) {
-      hostElement.insertBefore(element, initialSibling);
-    } else {
-      hostElement.appendChild(element);
-    }
-  };
-
-  const ensureMessage = (state, message) => {
-    if (typeof message === "string") {
-      const trimmed = message.trim();
-      if (trimmed.length > 0) {
-        return trimmed;
-      }
-    }
-
-    if (state === LOCATION_STATE.locating) {
-      return messages.locating;
-    }
-    if (state === LOCATION_STATE.denied) {
-      return messages.denied;
-    }
-    if (state === LOCATION_STATE.unavailable) {
-      return messages.unavailable;
-    }
-
-    return fallbackMessage;
-  };
-
-  let readyResolver;
-  let settled = false;
-  let cancelled = false;
-
-  const ready = new Promise((resolve) => {
-    readyResolver = resolve;
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td>${entry.date || "—"}</td>
+      <td>${entry.route || "—"}</td>
+      <td>${formatShortTime(entry.expectedPickup?.slice(11, 16))}</td>
+      <td>${pickupActual ? formatTime(pickupActual) : "—"}</td>
+      <td>${formatDelta(expectedPickup, pickupActual)}</td>
+      <td>${formatShortTime(entry.expectedArrival?.slice(11, 16))}</td>
+      <td>${arrivalActual ? formatTime(arrivalActual) : "—"}</td>
+      <td>${formatDelta(expectedArrival, arrivalActual)}</td>
+      <td>${formatDuration(pickupActual, arrivalActual)}</td>
+      <td>${entry.notes || "—"}</td>
+    `;
+    historyBody.appendChild(row);
   });
 
-  const finalize = (payload) => {
-    if (settled) {
-      return;
-    }
-    settled = true;
-    if (readyResolver) {
-      readyResolver(payload);
-    }
-  };
-
-  const applyState = (state, message) => {
-    ensureAttached();
-
-    const finalMessage = ensureMessage(state, message);
-    element.dataset.state = state;
-    element.textContent = finalMessage;
-
-    if (typeof options.onStateChange === "function") {
-      options.onStateChange({ state, message: finalMessage });
-    }
-
-    return finalMessage;
-  };
-
-  applyState(LOCATION_STATE.locating, messages.locating);
-
-  if (!geolocation || typeof geolocation.getCurrentPosition !== "function") {
-    const message = applyState(LOCATION_STATE.unavailable, fallbackMessage);
-    finalize({ state: LOCATION_STATE.unavailable, message });
-    return {
-      ready,
-      cancel() {
-        cancelled = true;
-      },
-    };
-  }
-
-  const handleSuccess = async (position) => {
-    if (cancelled) {
-      return;
-    }
-
-    const coords = position && position.coords ? position.coords : null;
-    const label = await resolvePositionLabel(coords, reverseGeocode, fallbackMessage);
-    const message = applyState(LOCATION_STATE.resolved, label);
-    finalize({ state: LOCATION_STATE.resolved, message, coords });
-  };
-
-  const handleError = (error) => {
-    if (cancelled) {
-      return;
-    }
-
-    const denied = shouldTreatAsDenied(error);
-    const state = denied ? LOCATION_STATE.denied : LOCATION_STATE.unavailable;
-    const message = applyState(
-      state,
-      denied ? messages.denied : fallbackMessage
-    );
-    finalize({ state, message, error });
-  };
-
-  const positionOptions = {
-    ...DEFAULT_POSITION_OPTIONS,
-    ...(options.positionOptions || {}),
-  };
-
-  try {
-    geolocation.getCurrentPosition(
-      handleSuccess,
-      handleError,
-      positionOptions
-    );
-  } catch (error) {
-    console.error("Geolocation request failed", error);
-    handleError(error);
-  }
-
-  return {
-    ready,
-    cancel() {
-      if (!cancelled) {
-        cancelled = true;
-        finalize({
-          state: LOCATION_STATE.cancelled,
-          message: element.textContent.trim(),
-        });
-      }
-    },
-  };
+  renderStats(history);
 }
 
-document.documentElement.style.setProperty(
-  "--fuse-duration",
-  `${SELF_DESTRUCT_WARNING}ms`
-);
-document.documentElement.style.setProperty(
-  "--scan-duration",
-  `${SCAN_DURATION}ms`
-);
-
-const scheduler = createScheduler();
-let isPaused = false;
-
-const countdownState = {
-  active: false,
-  remainingMs: SELF_DESTRUCT_WARNING,
-  rafId: null,
-  paused: false,
-  lastTimestamp: null,
-  display: null,
-};
-
-async function assignRandomDossierImages() {
-  if (typeof window === "undefined") {
+function renderStats(history) {
+  if (!summaryStats) return;
+  if (!history.length) {
+    summaryStats.innerHTML = "";
     return;
   }
 
-  const imageTargets = Array.from(
-    document.querySelectorAll(".photo-card img[data-random-image]")
-  );
-
-  if (!imageTargets.length) {
-    return;
-  }
-
-  try {
-    const manifest = await loadImageManifest();
-    if (!manifest.images.length) {
-      return;
-    }
-
-    const selections = await selectImagesFromManifest(
-      manifest,
-      imageTargets.length
-    );
-    selections.forEach((src, index) => {
-      const target = imageTargets[index];
-      if (target && typeof src === "string" && src.length > 0) {
-        updateImageSource(target, src);
-      }
-    });
-
-    const focusHost = document.querySelector("[data-focus-image]");
-    const focusImage = selections[0] || manifest.images[0];
-    if (focusHost && typeof focusImage === "string" && focusImage.length > 0) {
-      focusHost.dataset.focusImage = focusImage;
-    }
-  } catch (error) {
-    console.error("Unable to randomize dossier imagery", error);
-  }
-}
-
-async function loadImageManifest() {
-  const response = await fetch(IMAGE_MANIFEST_URL, {
-    cache: "no-store",
-  });
-
-  if (!response.ok) {
-    throw new Error(`Failed to load image manifest: ${response.status}`);
-  }
-
-  const payload = await response.json();
-  const fileList = Array.isArray(payload?.images)
-    ? payload.images
-    : Array.isArray(payload)
-      ? payload
-      : [];
-
-  const cleaned = sanitizeManifestList(fileList);
-  const version = String(
-    (typeof payload?.version === "string" && payload.version) ||
-      payload?.generatedAt ||
-      payload?.updatedAt ||
-      cleaned.join("|") ||
-      "0"
-  );
-
-  return {
-    images: cleaned,
-    version,
-  };
-}
-
-function sanitizeManifestList(fileList) {
-  const seen = new Set();
-
-  return fileList
-    .map((entry) => (typeof entry === "string" ? entry.trim() : ""))
-    .filter((entry) => entry.length > 0)
-    .map((entry) =>
-      entry.startsWith("assets/") ? entry : `assets/images/${entry}`
-    )
-    .filter((entry) => {
-      if (seen.has(entry)) {
-        return false;
-      }
-      seen.add(entry);
-      return true;
-    });
-}
-
-async function selectImagesFromManifest(manifest, count) {
-  if (!manifest.images.length || count <= 0) {
-    return [];
-  }
-
-  const storage = getLocalStorage();
-  const orderedImages = await orderImagesByFreshness(manifest.images);
-  const storedQueue = readStoredQueue(storage, manifest.version, orderedImages);
-  const workingQueue = storedQueue.length
-    ? [...storedQueue]
-    : orderedImages.slice();
-  const selections = [];
-
-  while (selections.length < count && orderedImages.length) {
-    if (!workingQueue.length) {
-      workingQueue.push(...orderedImages);
-    }
-
-    const next = workingQueue.shift();
-    if (typeof next === "string" && next.length > 0) {
-      selections.push(next);
-    }
-  }
-
-  persistQueue(storage, workingQueue, manifest.version);
-
-  return selections;
-}
-
-async function orderImagesByFreshness(images) {
-  const uniqueImages = Array.isArray(images) ? Array.from(new Set(images)) : [];
-  if (!uniqueImages.length) {
-    return [];
-  }
-
-  const freshnessData = await Promise.all(
-    uniqueImages.map((src, index) => resolveImageFreshness(src, index))
-  );
-
-  freshnessData.sort((a, b) => {
-    if (b.lastModified !== a.lastModified) {
-      return b.lastModified - a.lastModified;
-    }
-    return b.index - a.index;
-  });
-
-  return freshnessData.map((entry) => entry.src);
-}
-
-async function resolveImageFreshness(src, index) {
-  const baseTimestamp = Number.isFinite(index) ? index : 0;
-
-  try {
-    const response = await fetch(src, {
-      method: "HEAD",
-      cache: "no-store",
-    });
-
-    if (response.ok) {
-      const header = response.headers.get("last-modified");
-      const parsed = header ? Date.parse(header) : NaN;
-      if (Number.isFinite(parsed)) {
-        return { src, index, lastModified: parsed }; // prefer server timestamp
-      }
-    }
-  } catch (error) {
-    // Ignore network issues and fall back to manifest order heuristics.
-  }
-
-  // Fall back to treating later entries as fresher if timestamps are unavailable.
-  return { src, index, lastModified: baseTimestamp };
-}
-
-function getLocalStorage() {
-  if (typeof window === "undefined") {
-    return null;
-  }
-
-  try {
-    const { localStorage } = window;
-    const testKey = "__hb-storage-test__";
-    localStorage.setItem(testKey, testKey);
-    localStorage.removeItem(testKey);
-    return localStorage;
-  } catch (error) {
-    return null;
-  }
-}
-
-function readStoredQueue(storage, version, allowedImages) {
-  if (!storage) {
-    return [];
-  }
-
-  try {
-    const raw = storage.getItem(IMAGE_QUEUE_STORAGE_KEY);
-    if (!raw) {
-      return [];
-    }
-
-    const parsed = JSON.parse(raw);
-    if (parsed?.version !== version || !Array.isArray(parsed?.queue)) {
-      return [];
-    }
-
-    const allowed = new Set(allowedImages);
-    return parsed.queue.filter(
-      (entry) => typeof entry === "string" && allowed.has(entry)
-    );
-  } catch (error) {
-    return [];
-  }
-}
-
-function persistQueue(storage, queue, version) {
-  if (!storage) {
-    return;
-  }
-
-  try {
-    storage.setItem(
-      IMAGE_QUEUE_STORAGE_KEY,
-      JSON.stringify({ version, queue })
-    );
-  } catch (error) {
-    // Fail silently; rotation will reset on next load if persistence is unavailable.
-  }
-}
-
-function updateImageSource(img, src) {
-  const currentSrc = img.getAttribute("src");
-  if (currentSrc === src) {
-    return;
-  }
-
-  img.setAttribute("src", src);
-  img.dataset.randomizedSrc = src;
-}
-
-function calculateTerminalBootDuration(lines, charDelay, lineDelay) {
-  const safeCharDelay = Math.max(1, Number(charDelay) || 0);
-  const safeLineDelay = Math.max(0, Number(lineDelay) || 0);
-
-  return lines.reduce((total, line, index) => {
-    const length = typeof line === "string" ? line.length : 0;
-    const charTime = length * safeCharDelay;
-    const pause = index < lines.length - 1 ? safeLineDelay : 0;
-    return total + charTime + pause;
-  }, 0);
-}
-
-async function playTerminalBootSequence(target, lines, options = {}) {
-  if (!target || !lines || !lines.length) {
-    return;
-  }
-
-  const charDelay = Math.max(6, Number(options.charDelay) || TERMINAL_CHAR_DELAY);
-  const lineDelay = Math.max(40, Number(options.lineDelay) || TERMINAL_LINE_DELAY);
-
-  target.textContent = "";
-
-  for (let index = 0; index < lines.length; index += 1) {
-    const line = lines[index];
-    await typeTerminalLine(target, line, charDelay);
-    if (index < lines.length - 1) {
-      await controlledDelay(lineDelay);
-    }
-  }
-}
-
-async function typeTerminalLine(target, line, charDelay) {
-  const content = typeof line === "string" ? line : "";
-  const step = Math.max(6, Math.floor(charDelay));
-
-  for (const char of content) {
-    await waitIfPaused();
-    target.textContent += char;
-    target.scrollTop = target.scrollHeight;
-    await controlledDelay(step);
-  }
-
-  await waitIfPaused();
-  target.textContent += "\n";
-  target.scrollTop = target.scrollHeight;
-}
-
-function beginBiometricScan(introElement) {
-  if (!introElement) {
-    return;
-  }
-
-  introElement.classList.add("scanning");
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-  const body = document.body;
-  const intro = document.getElementById("intro");
-  const introText = intro ? intro.querySelector(".intro-text") : null;
-  const introSubtext = intro ? intro.querySelector(".intro-subtext") : null;
-  const terminalLog = intro ? intro.querySelector(".terminal-log") : null;
-  const selfDestructOverlay = document.getElementById("self-destruct");
-  const countdownEl = selfDestructOverlay.querySelector(
-    ".self-destruct-countdown"
-  );
-  const pauseButton = document.getElementById("debug-pause");
-  const currentLocationElement = document.getElementById("current-location");
-  const liveMessage = document.getElementById("live-message");
-  const liveMessageBody = liveMessage
-    ? liveMessage.querySelector(".message-body")
-    : null;
-  const closeTransmissionButton = liveMessage
-    ? liveMessage.querySelector("[data-close-transmission]")
-    : null;
-  const focusStage = document.getElementById("focus-stage");
-  const focusContent = focusStage.querySelector(".focus-content");
-  const fuse = document.getElementById("fuse");
-  const resetButton = document.getElementById("reset-timeline");
-  const decryptionOverlay = document.getElementById("decryption-overlay");
-  const decryptionStatus = document.getElementById("decryption-status");
-  const decryptionLog = document.getElementById("decryption-log");
-  const decryptionMessage = document.getElementById("decryption-message");
-  const hasDecryptionSequence =
-    typeof startDecryptionSequence === "function";
-  const copyAddressButton = document.getElementById("copy-address");
-  const copyMapLinkButton = document.getElementById("copy-map-link");
-  const previewOverlay = document.getElementById("image-preview");
-  const previewFrame = previewOverlay
-    ? previewOverlay.querySelector(".preview-frame")
-    : null;
-  const previewImage = previewOverlay ? previewOverlay.querySelector("img") : null;
-  const previewCaption = previewOverlay
-    ? previewOverlay.querySelector(".preview-caption")
-    : null;
-
-  if (previewFrame && !previewFrame.hasAttribute("tabindex")) {
-    previewFrame.setAttribute("tabindex", "-1");
-  }
-
-  const previewManager = initializeImagePreview({
-    overlay: previewOverlay,
-    frame: previewFrame,
-    image: previewImage,
-    caption: previewCaption,
-    body,
-  });
-
-  const previewTargets = Array.from(document.querySelectorAll("main img"));
-  previewTargets.forEach((img) => {
-    if (img.closest("#image-preview")) {
-      return;
-    }
-    previewManager.register(img);
-  });
-
-  if (copyAddressButton) {
-    copyAddressButton.dataset.defaultLabel = copyAddressButton.textContent
-      .trim()
-      .replace(/\s+/g, " ");
-    copyAddressButton.addEventListener("click", () => {
-      handleCopyAction(copyAddressButton, ADDRESS_COPY_TEXT);
-    });
-  }
-
-  if (copyMapLinkButton) {
-    const mapUrl =
-      copyMapLinkButton.dataset.mapUrl?.trim() || MAP_LOCATION_URL || "";
-    copyMapLinkButton.dataset.defaultLabel = copyMapLinkButton.textContent
-      .trim()
-      .replace(/\s+/g, " ");
-    copyMapLinkButton.addEventListener("click", () => {
-      handleCopyAction(copyMapLinkButton, mapUrl);
-    });
-  }
-
-  assignRandomDossierImages();
-
-  if (currentLocationElement) {
-    initializeGeolocation({ element: currentLocationElement });
-  }
-
-  countdownState.display = countdownEl;
-
-  if (introText) {
-    introText.textContent = "Stabilizing subspace handshake...";
-  }
-
-  if (introSubtext) {
-    introSubtext.textContent = "Routing through secure relays";
-  }
-
-  if (terminalLog) {
-    playTerminalBootSequence(terminalLog, TERMINAL_BOOT_LINES, {
-      charDelay: TERMINAL_CHAR_DELAY,
-      lineDelay: TERMINAL_LINE_DELAY,
+  const pickupDeltas = history
+    .map((entry) => {
+      const expected = entry.expectedPickup
+        ? new Date(entry.expectedPickup)
+        : null;
+      const actual = entry.pickupActual ? new Date(entry.pickupActual) : null;
+      return expected && actual
+        ? Math.round((actual.getTime() - expected.getTime()) / 60000)
+        : null;
     })
-      .then(async () => {
-        if (introText) {
-          introText.textContent = "Biometric scan engaged...";
-        }
-        if (introSubtext) {
-          introSubtext.textContent = "Initiating redline sweep";
-        }
-        await controlledDelay(SCAN_PREP_DELAY);
-        beginBiometricScan(intro);
-        await controlledDelay(SCAN_DURATION);
-        if (introSubtext) {
-          introSubtext.textContent = "Awaiting confirmation signature";
-        }
-      })
-      .catch(console.error);
-  }
+    .filter((value) => value !== null);
 
-  const streamItems = Array.from(document.querySelectorAll(".stream-item"));
-  const orderedStreamItems = streamItems.sort((a, b) =>
-    parseFloat(a.dataset.streamOrder || "0") -
-    parseFloat(b.dataset.streamOrder || "0")
-  );
+  const arrivalDeltas = history
+    .map((entry) => {
+      const expected = entry.expectedArrival
+        ? new Date(entry.expectedArrival)
+        : null;
+      const actual = entry.arrivalActual ? new Date(entry.arrivalActual) : null;
+      return expected && actual
+        ? Math.round((actual.getTime() - expected.getTime()) / 60000)
+        : null;
+    })
+    .filter((value) => value !== null);
 
-  prepareStreamItems(orderedStreamItems, liveMessageBody, liveMessage);
-
-  const dossier = document.getElementById("dossier");
-  let transmissionDocked = false;
-
-  const dockTransmission = () => {
-    if (!liveMessage || transmissionDocked) {
-      return;
-    }
-
-    transmissionDocked = true;
-
-    if (body) {
-      body.classList.remove("final-transmission");
-    }
-
-    if (dossier && liveMessage.parentElement !== dossier) {
-      dossier.appendChild(liveMessage);
-    }
-
-    liveMessage.classList.add("docked");
-    liveMessage.classList.remove("visible");
-    liveMessage.setAttribute("role", "region");
-    liveMessage.setAttribute("aria-live", "off");
-    liveMessage.setAttribute(
-      "aria-label",
-      liveMessage.getAttribute("data-docked-label") || "Stored transmission"
-    );
+  const avg = (values) => {
+    if (!values.length) return "—";
+    const total = values.reduce((sum, value) => sum + value, 0);
+    return `${Math.round(total / values.length)}m`;
   };
 
-  if (closeTransmissionButton) {
-    closeTransmissionButton.addEventListener("click", () => {
-      dockTransmission();
-    });
-  }
-
-  if (liveMessage) {
-    liveMessage.addEventListener("keydown", (event) => {
-      if (event.key === "Escape" || event.key === "Esc") {
-        dockTransmission();
-      }
-    });
-  }
-
-  if (decryptionMessage) {
-    const fallbackText = extractText(decryptionMessage);
-    const finalMessageText =
-      (liveMessageBody && liveMessageBody.dataset.streamText) ||
-      fallbackText ||
-      "";
-    decryptionMessage.dataset.streamText = finalMessageText;
-    decryptionMessage.textContent = "";
-  }
-
-  if (resetButton) {
-    resetButton.addEventListener("click", () => {
-      window.location.reload();
-    });
-  }
-
-  scheduler.schedule(
-    "introConfirm",
-    () => {
-      if (intro) {
-        intro.classList.add("confirmed");
-        intro.classList.remove("scanning");
-      }
-      if (introText) {
-        introText.textContent = "Identity Confirmed";
-      }
-      if (introSubtext) {
-        introSubtext.textContent = "Clearance matrix synchronized";
-      }
-    },
-    INTRO_CONFIRM_TIME
-  );
-
-  let transmissionDisplayed = false;
-
-  const displayTransmission = () => {
-    if (transmissionDisplayed || !liveMessage || !liveMessageBody) {
-      return;
-    }
-
-    transmissionDisplayed = true;
-    showTransmission(liveMessage, liveMessageBody).catch(console.error);
-  };
-
-  const markTransmissionReady = () => {
-    if (!transmissionDisplayed) {
-      displayTransmission();
-    }
-  };
-
-  const recoverFromExplosion = () => {
-    if (body) {
-      body.classList.add("explosion-recovery");
-
-      if (
-        typeof window !== "undefined" &&
-        typeof window.requestAnimationFrame === "function"
-      ) {
-        window.requestAnimationFrame(() => {
-          window.requestAnimationFrame(() => {
-            body.classList.remove("explode");
-          });
-        });
-      } else {
-        body.classList.remove("explode");
-      }
-    }
-
-    if (selfDestructOverlay) {
-      selfDestructOverlay.classList.remove("visible");
-    }
-
-    if (fuse) {
-      fuse.classList.remove("ignited");
-    }
-
-    scheduler.schedule(
-      "recoverCleanup",
-      () => {
-        if (body) {
-          body.classList.remove("explosion-recovery");
-        }
-      },
-      900
-    );
-  };
-
-  scheduler.schedule(
-    "introComplete",
-    () => {
-      intro.classList.add("intro-complete");
-      body.classList.add("show-dossier");
-      runStreamSequence(
-        orderedStreamItems,
-        liveMessage,
-        liveMessageBody,
-        focusStage,
-        focusContent,
-        {
-          onComplete: markTransmissionReady,
-        }
-      ).catch(console.error);
-    },
-    INTRO_COMPLETE_TIME
-  );
-
-  scheduler.schedule(
-    "countdown",
-    () => {
-      startCountdown(selfDestructOverlay, countdownState, fuse);
-    },
-    FUSE_DURATION
-  );
-
-  scheduler.schedule(
-    "explode",
-    () => {
-      body.classList.add("explode");
-    },
-    FUSE_DURATION + SELF_DESTRUCT_WARNING
-  );
-
-  scheduler.schedule(
-    "recover",
-    () => {
-      recoverFromExplosion();
-    },
-    FUSE_DURATION + SELF_DESTRUCT_WARNING + POST_EXPLOSION_TRANSMISSION_DELAY
-  );
-
-  if (
-    decryptionOverlay &&
-    decryptionStatus &&
-    decryptionLog &&
-    decryptionMessage &&
-    hasDecryptionSequence
-  ) {
-    const decryptDelay =
-      typeof EXPLOSION_TO_DECRYPT_DELAY === "number"
-        ? EXPLOSION_TO_DECRYPT_DELAY
-        : 1800;
-    scheduler.schedule(
-      "decrypt",
-      () => {
-        startDecryptionSequence({
-          overlay: decryptionOverlay,
-          statusEl: decryptionStatus,
-          logEl: decryptionLog,
-          messageEl: decryptionMessage,
-          body,
-        });
-      },
-      FUSE_DURATION + SELF_DESTRUCT_WARNING + decryptDelay
-    );
-  }
-
-  pauseButton.addEventListener("click", () => {
-    togglePause(pauseButton, body);
-  });
-});
-
-function initializeImagePreview(elements = {}) {
-  const overlay = elements.overlay;
-  const imageEl = elements.image;
-  const captionEl = elements.caption;
-  const frame = elements.frame || null;
-  const body = elements.body || document.body;
-
-  if (!overlay || !imageEl || !captionEl) {
-    return {
-      register(target) {
-        if (target) {
-          target.dataset.previewEnabled = "false";
-        }
-      },
-    };
-  }
-
-  let active = false;
-  let previousFocus = null;
-  let keydownBound = false;
-
-  const closePreview = () => {
-    if (!active) {
-      return;
-    }
-
-    overlay.classList.remove("active");
-    overlay.setAttribute("aria-hidden", "true");
-    imageEl.removeAttribute("src");
-    imageEl.removeAttribute("alt");
-    captionEl.textContent = "";
-    captionEl.removeAttribute("hidden");
-    body.classList.remove("preview-open");
-
-    if (previousFocus && typeof previousFocus.focus === "function") {
-      previousFocus.focus({ preventScroll: true });
-    }
-
-    previousFocus = null;
-    active = false;
-
-    if (keydownBound) {
-      document.removeEventListener("keydown", handleKeydown);
-      keydownBound = false;
-    }
-  };
-
-  const handleKeydown = (event) => {
-    if (event.key === "Escape") {
-      closePreview();
-    }
-  };
-
-  const openPreview = (target) => {
-    if (!target) {
-      return;
-    }
-
-    const source = target.currentSrc || target.src || target.dataset.src;
-    if (!source) {
-      return;
-    }
-
-    const label = resolveImagePreviewCaption(target);
-    imageEl.src = source;
-    const altText = target.getAttribute("alt") || label || "Image preview";
-    imageEl.alt = altText;
-    captionEl.textContent = label;
-    if (label) {
-      captionEl.removeAttribute("hidden");
-    } else {
-      captionEl.setAttribute("hidden", "true");
-    }
-
-    previousFocus =
-      document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    overlay.classList.add("active");
-    overlay.setAttribute("aria-hidden", "false");
-    body.classList.add("preview-open");
-
-    if (frame && typeof frame.focus === "function") {
-      frame.focus({ preventScroll: true });
-    }
-
-    if (!keydownBound) {
-      document.addEventListener("keydown", handleKeydown);
-      keydownBound = true;
-    }
-
-    active = true;
-  };
-
-  overlay.addEventListener("click", (event) => {
-    if (
-      event.target === overlay ||
-      (event.target && event.target.hasAttribute("data-preview-close"))
-    ) {
-      closePreview();
-    }
-  });
-
-  return {
-    register(target) {
-      if (!target || target.dataset.previewEnabled === "true") {
-        return;
-      }
-
-      target.dataset.previewEnabled = "true";
-      if (!target.hasAttribute("tabindex")) {
-        target.setAttribute("tabindex", "0");
-      }
-      if (!target.hasAttribute("role")) {
-        target.setAttribute("role", "button");
-      }
-      target.setAttribute("aria-haspopup", "dialog");
-
-      target.addEventListener("click", (event) => {
-        event.preventDefault();
-        openPreview(target);
-      });
-
-      target.addEventListener("keydown", (event) => {
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          openPreview(target);
-        }
-      });
-    },
-    close: closePreview,
-  };
+  summaryStats.innerHTML = `
+    <div>
+      <span>Avg pickup delta</span>
+      <strong>${avg(pickupDeltas)}</strong>
+    </div>
+    <div>
+      <span>Avg arrival delta</span>
+      <strong>${avg(arrivalDeltas)}</strong>
+    </div>
+  `;
 }
 
-async function handleCopyAction(button, text) {
-  if (!button || !text) {
+function handlePickupNow() {
+  const baseTrip = activeTrip || buildTripBase();
+  if (!baseTrip) {
+    setReminderStatus("Pick a route before checking in.");
     return;
   }
 
-  const defaultLabel = button.dataset.defaultLabel || button.textContent.trim();
-  button.disabled = true;
-
-  try {
-    const success = await copyTextToClipboard(text);
-    if (success) {
-      button.classList.remove("copy-error");
-      button.classList.add("copied");
-      button.textContent = "Copied!";
-    } else {
-      button.classList.remove("copied");
-      button.classList.add("copy-error");
-      button.textContent = "Copy Unavailable";
-    }
-  } catch (error) {
-    console.error("Unable to copy text", error);
-    button.classList.remove("copied");
-    button.classList.add("copy-error");
-    button.textContent = "Copy Failed";
-  }
-
-  setTimeout(() => {
-    button.classList.remove("copied", "copy-error");
-    button.textContent = defaultLabel;
-    button.disabled = false;
-  }, 2200);
-}
-
-async function copyTextToClipboard(text) {
-  if (!text) {
-    return false;
-  }
-
-  try {
-    if (
-      typeof navigator !== "undefined" &&
-      navigator.clipboard &&
-      typeof navigator.clipboard.writeText === "function"
-    ) {
-      await navigator.clipboard.writeText(text);
-      return true;
-    }
-  } catch (error) {
-    console.warn("Clipboard API unavailable", error);
-  }
-
-  const textarea = document.createElement("textarea");
-  textarea.value = text;
-  textarea.setAttribute("readonly", "true");
-  textarea.style.position = "fixed";
-  textarea.style.opacity = "0";
-  textarea.style.pointerEvents = "none";
-  document.body.appendChild(textarea);
-  textarea.focus();
-  textarea.select();
-
-  let success = false;
-  try {
-    success = document.execCommand("copy");
-  } catch (error) {
-    console.error("Fallback clipboard copy failed", error);
-    success = false;
-  }
-
-  document.body.removeChild(textarea);
-  return success;
-}
-
-function resolveImagePreviewCaption(image) {
-  if (!image) {
-    return "";
-  }
-
-  const figure = image.closest("figure");
-  if (figure) {
-    const datasetLabel = figure.dataset.label;
-    if (datasetLabel) {
-      return datasetLabel;
-    }
-
-    const ariaLabel = figure.getAttribute("aria-label");
-    if (ariaLabel) {
-      return ariaLabel.trim();
-    }
-
-    const figcaption = figure.querySelector("figcaption");
-    if (figcaption && figcaption.textContent) {
-      return figcaption.textContent.trim();
-    }
-  }
-
-  const altText = image.getAttribute("alt");
-  if (altText) {
-    return altText.trim();
-  }
-
-  const ariaLabel = image.getAttribute("aria-label");
-  if (ariaLabel) {
-    return ariaLabel.trim();
-  }
-
-  return "Image Preview";
-}
-
-function createScheduler(options = {}) {
-  const setTimer =
-    options.setTimeout || (typeof window !== "undefined" && window.setTimeout)
-      ? options.setTimeout || window.setTimeout.bind(window)
-      : setTimeout;
-  const clearTimer =
-    options.clearTimeout ||
-    (typeof window !== "undefined" && window.clearTimeout)
-      ? options.clearTimeout || window.clearTimeout.bind(window)
-      : clearTimeout;
-  const nowFn =
-    typeof options.now === "function"
-      ? options.now
-      : () => (typeof performance !== "undefined" ? performance.now() : Date.now());
-  const timers = new Map();
-
-  const schedule = (name, callback, delay) => {
-    const timer = {
-      name,
-      callback,
-      remaining: delay,
-      start: nowFn(),
-      id: null,
-    };
-
-    timer.id = setTimer(() => {
-      timers.delete(name);
-      callback();
-    }, delay);
-
-    timers.set(name, timer);
-    return timer;
+  const now = new Date();
+  const updated = {
+    ...baseTrip,
+    pickupActual: now.toISOString(),
   };
 
-  const pauseAll = () => {
-    timers.forEach((timer) => {
-      clearTimer(timer.id);
-      const elapsed = nowFn() - timer.start;
-      timer.remaining = Math.max(timer.remaining - elapsed, 0);
-    });
-  };
-
-  const resumeAll = () => {
-    timers.forEach((timer, name) => {
-      if (timer.remaining <= 0) {
-        timers.delete(name);
-        timer.callback();
-        return;
-      }
-
-      timer.start = nowFn();
-      timer.id = setTimer(() => {
-        timers.delete(name);
-        timer.callback();
-      }, timer.remaining);
-    });
-  };
-
-  return { schedule, pauseAll, resumeAll };
-}
-
-function prepareStreamItems(items, messageBody, messageContainer) {
-  items.forEach((item) => {
-    const type = item.dataset.streamType || "text";
-    item.classList.remove("active", "typing", "pinned");
-    item.classList.remove("module-online");
-
-    if (type === "text") {
-      const preserved = Array.from(
-        item.querySelectorAll("[data-preserve-node]")
-      );
-
-      if (preserved.length) {
-        PRESERVED_CHILDREN.set(item, preserved);
-      } else {
-        PRESERVED_CHILDREN.delete(item);
-      }
-
-      let content;
-
-      if (preserved.length) {
-        const clone = item.cloneNode(true);
-        const clonePreserved = clone.querySelectorAll("[data-preserve-node]");
-        clonePreserved.forEach((node) => node.remove());
-        content = extractText(clone);
-        if (content.length && !/\s$/.test(content)) {
-          content += " ";
-        }
-      } else {
-        content = extractText(item);
-      }
-
-      item.dataset.streamText = content;
-      item.textContent = "";
-    }
-  });
-
-  if (messageBody && messageContainer) {
-    const messageText = extractText(messageBody);
-    messageBody.dataset.streamText = messageText;
-    messageBody.textContent = "";
-    messageContainer.classList.remove("visible", "docked");
-
-    if (typeof document !== "undefined" && document.body) {
-      document.body.classList.remove("final-transmission");
-    }
-  }
-}
-
-async function runStreamSequence(
-  items,
-  liveMessage,
-  messageBody,
-  focusStage,
-  focusContent,
-  options = {}
-) {
-  const { onComplete } = options;
-
-  if (!items.length) {
-    if (typeof onComplete === "function") {
-      onComplete();
-    }
-    return;
-  }
-
-  const [primary, ...rest] = items;
-  await waitIfPaused();
-
-  const type = primary.dataset.streamType || "text";
-  const focusMode = primary.dataset.focusMode || "";
-  const focusLabel = resolveFocusLabel(primary);
-  const focusHold = Number(primary.dataset.focusHold || 0);
-
-  let cascadePromise = Promise.resolve();
-
-  if (type === "text") {
-    const baseSpeed = Number(primary.dataset.streamSpeed) || DEFAULT_TYPE_SPEED;
-    const textContent = primary.dataset.streamText || "";
-    const focusSpeed = Number(primary.dataset.focusSpeed || 0);
-
-    if (focusMode) {
-      await engageFocus(primary, focusStage, focusContent, {
-        type,
-        mode: focusMode,
-        label: focusLabel,
-        speed: focusSpeed || accelerateSpeed(baseSpeed, 0.5),
-        text: textContent,
-        hold: focusHold || DEFAULT_FOCUS_HOLD,
-        image: primary.dataset.focusImage,
-      });
-    }
-
-    const preservedNodes = PRESERVED_CHILDREN.get(primary) || [];
-    const typingPromise = typeText(
-      primary,
-      textContent,
-      accelerateSpeed(baseSpeed, 0.58),
-      { preservedNodes }
-    );
-    primary.classList.add("pinned");
-
-    if (rest.length) {
-      cascadePromise = startCascade(rest, focusStage, focusContent, {
-        initialDelay: 420,
-        betweenDelay: 320,
-        speedFactor: 0.58,
-      });
-    }
-
-    await Promise.all([typingPromise, cascadePromise]);
-    await controlledDelay(90);
-  } else if (type === "media") {
-    if (focusMode) {
-      await engageFocus(primary, focusStage, focusContent, {
-        type,
-        mode: focusMode,
-        label: focusLabel,
-        hold: focusHold || 800,
-      });
-    }
-
-    primary.classList.add("active");
-
-    if (rest.length) {
-      cascadePromise = startCascade(rest, focusStage, focusContent, {
-        initialDelay: 260,
-        betweenDelay: 260,
-      });
-      await cascadePromise;
-    }
-  } else {
-    await engageFocus(primary, focusStage, focusContent, {
-      type: "module",
-      mode: focusMode || "module",
-      label: focusLabel,
-      hold: focusHold || 900,
-    });
-
-    primary.classList.add("active");
-
-    if (rest.length) {
-      cascadePromise = startCascade(rest, focusStage, focusContent, {
-        initialDelay: 320,
-        betweenDelay: 300,
-      });
-      await cascadePromise;
-    }
-  }
-
-  await controlledDelay(140);
-
-  if (typeof onComplete === "function") {
-    onComplete();
-  }
-}
-
-async function showTransmission(container, messageBody) {
-  if (typeof document !== "undefined" && document.body) {
-    document.body.classList.add("final-transmission");
-  }
-
-  container.classList.add("visible");
-  await controlledDelay(220);
-  await typeText(messageBody, messageBody.dataset.streamText || "", 12);
-
-  const closeButton = container.querySelector("[data-close-transmission]");
-  if (closeButton && typeof closeButton.focus === "function") {
-    closeButton.focus();
-  }
-}
-
-function resolveFocusLabel(item) {
-  if (item.dataset.focusTitle) {
-    return item.dataset.focusTitle;
-  }
-
-  const heading = item.querySelector("h2, h3, h4, h5");
-  if (heading && heading.textContent) {
-    return heading.textContent.trim();
-  }
-
-  const aria = item.getAttribute("aria-label");
-  if (aria) {
-    return aria;
-  }
-
-  return "Incoming Feed";
-}
-
-function accelerateSpeed(base, factor = 0.52) {
-  const source = Number(base) || DEFAULT_TYPE_SPEED;
-  const value = Math.floor(source * factor);
-  return Math.max(8, value);
-}
-
-async function startCascade(
-  items,
-  focusStage,
-  focusContent,
-  options = {}
-) {
-  if (!items.length) {
-    return;
-  }
-
-  const initialDelay = options.initialDelay ?? 420;
-  const betweenDelay = options.betweenDelay ?? 320;
-  const speedFactor = options.speedFactor ?? 0.58;
-
-  await controlledDelay(initialDelay);
-
-  for (const item of items) {
-    await waitIfPaused();
-    const type = item.dataset.streamType || "text";
-    const focusMode = item.dataset.focusMode || "";
-    const focusLabel = resolveFocusLabel(item);
-    const focusHold = Number(item.dataset.focusHold || 0);
-
-    if (type === "text") {
-      const baseSpeed = Number(item.dataset.streamSpeed) || DEFAULT_TYPE_SPEED;
-      const textContent = item.dataset.streamText || "";
-      const focusSpeed = Number(item.dataset.focusSpeed || 0);
-
-      if (focusMode) {
-        await engageFocus(item, focusStage, focusContent, {
-          type,
-          mode: focusMode,
-          label: focusLabel,
-          speed: focusSpeed || accelerateSpeed(baseSpeed, speedFactor * 0.85),
-          text: textContent,
-          hold: focusHold || DEFAULT_FOCUS_HOLD,
-          image: item.dataset.focusImage,
-        });
-      }
-
-      const preservedNodes = PRESERVED_CHILDREN.get(item) || [];
-      await typeText(item, textContent, accelerateSpeed(baseSpeed, speedFactor), {
-        preservedNodes,
-      });
-      item.classList.add("pinned");
-      await controlledDelay(100);
-      await controlledDelay(betweenDelay);
-      continue;
-    }
-
-    if (type === "media") {
-      if (focusMode) {
-        await engageFocus(item, focusStage, focusContent, {
-          type,
-          mode: focusMode,
-          label: focusLabel,
-          hold: focusHold || 680,
-        });
-      }
-
-      item.classList.add("active");
-      await controlledDelay(120);
-      await controlledDelay(betweenDelay);
-      continue;
-    }
-
-    await engageFocus(item, focusStage, focusContent, {
-      type: "module",
-      mode: focusMode || "module",
-      label: focusLabel,
-      hold: focusHold || 820,
-    });
-
-    item.classList.add("active");
-    await controlledDelay(140);
-    await controlledDelay(betweenDelay);
-  }
-}
-
-async function engageFocus(item, stage, content, config) {
-  if (!stage || !content) {
-    return;
-  }
-
-  await waitIfPaused();
-
-  const mode = config.mode || item.dataset.focusMode || "module";
-  const label = config.label || resolveFocusLabel(item);
-  const { container, target } = createFocusClone(item, {
-    mode,
-    label,
-    type: config.type,
-    image: config.image,
-  });
-  const holdDuration = config.hold || DEFAULT_FOCUS_HOLD;
-  const typeSpeed = config.speed || DEFAULT_TYPE_SPEED;
-
-  stage.classList.remove("retreating", "engaged");
-  stage.dataset.mode = mode;
-  stage.setAttribute("aria-hidden", "false");
-  stage.classList.add("visible");
-
-  content.innerHTML = "";
-  content.appendChild(container);
-
-  await controlledDelay(30);
-  stage.classList.add("engaged");
-
-  if (config.type === "text") {
-    await typeText(target, config.text || "", typeSpeed);
-    await controlledDelay(90);
-  } else {
-    await controlledDelay(holdDuration);
-  }
-
-  stage.classList.add("retreating");
-  await controlledDelay(140);
-
-  stage.classList.remove("visible", "engaged", "retreating");
-  stage.removeAttribute("data-mode");
-  stage.setAttribute("aria-hidden", "true");
-  content.innerHTML = "";
-}
-
-function createFocusClone(item, config) {
-  const wrapper = document.createElement("div");
-  const labelEl = document.createElement("div");
-  const body = document.createElement("div");
-
-  wrapper.classList.add("focus-item", `focus-${config.mode}`);
-  if (config.type) {
-    wrapper.classList.add(`focus-${config.type}`);
-  }
-  labelEl.classList.add("focus-label");
-  labelEl.textContent = config.label;
-  body.classList.add("focus-body");
-
-  wrapper.appendChild(labelEl);
-  wrapper.appendChild(body);
-
-  if (config.type === "text") {
-    if (config.image) {
-      wrapper.classList.add("has-image");
-      const figure = document.createElement("figure");
-      figure.classList.add("focus-photo");
-      const image = document.createElement("img");
-      image.src = config.image;
-      image.alt = `${config.label} visual reference`;
-      image.loading = "lazy";
-      figure.appendChild(image);
-
-      const textual = document.createElement("div");
-      textual.classList.add("focus-textual");
-
-      body.appendChild(figure);
-      body.appendChild(textual);
-      return { container: wrapper, target: textual };
-    }
-
-    return { container: wrapper, target: body };
-  }
-
-  const clone = item.cloneNode(true);
-  clone.classList.remove("stream-item", "active", "typing", "module-online");
-  clone.removeAttribute("data-stream-order");
-
-  body.appendChild(clone);
-  return { container: wrapper, target: clone };
-}
-
-function extractText(element) {
-  const lines = element.textContent.split("\n").map((line) => line.trim());
-  const cleaned = [];
-  let previousBlank = false;
-
-  lines.forEach((line) => {
-    if (line) {
-      cleaned.push(line);
-      previousBlank = false;
-    } else if (!previousBlank) {
-      cleaned.push("");
-      previousBlank = true;
-    }
-  });
-
-  while (cleaned.length && cleaned[0] === "") {
-    cleaned.shift();
-  }
-
-  while (cleaned.length && cleaned[cleaned.length - 1] === "") {
-    cleaned.pop();
-  }
-
-  return cleaned.join("\n");
-}
-
-async function typeText(element, text, speed, options = {}) {
-  element.classList.add("typing");
-  if (element.classList.contains("stream-item")) {
-    element.classList.add("active");
-  }
-
-  // Clear any existing nodes before typing
-  element.innerHTML = "";
-
-  let currentNode = document.createTextNode("");
-  element.appendChild(currentNode);
-  const step = Math.max(6, Number(speed) || DEFAULT_TYPE_SPEED);
-  const newlineDelay = Math.max(8, Math.floor(step * 1.12));
-
-  for (const char of text) {
-    await waitIfPaused();
-
-    if (char === "\n") {
-      currentNode = document.createTextNode("");
-      element.appendChild(document.createElement("br"));
-      element.appendChild(currentNode);
-      await controlledDelay(newlineDelay);
-      continue;
-    }
-
-    currentNode.data += char;
-    await controlledDelay(step);
-  }
-
-  const preservedNodes = Array.isArray(options.preservedNodes)
-    ? options.preservedNodes
-    : [];
-
-  if (preservedNodes.length) {
-    const needsSpace =
-      element.textContent.length && !/\s$/.test(element.textContent);
-    if (needsSpace) {
-      element.appendChild(document.createTextNode(" "));
-    }
-
-    preservedNodes.forEach((node) => {
-      if (node && !node.isConnected) {
-        element.appendChild(node);
-      }
-    });
-  }
-
-  element.classList.remove("typing");
-}
-
-function controlledDelay(duration) {
-  if (duration <= 0) {
-    return Promise.resolve();
-  }
-
-  return new Promise((resolve) => {
-    let start = performance.now();
-    let pauseStart = null;
-
-    const step = (now) => {
-      if (isPaused) {
-        if (pauseStart === null) {
-          pauseStart = now;
-        }
-        requestAnimationFrame(step);
-        return;
-      }
-
-      if (pauseStart !== null) {
-        const pausedFor = now - pauseStart;
-        start += pausedFor;
-        pauseStart = null;
-      }
-
-      if (now - start >= duration) {
-        resolve();
-      } else {
-        requestAnimationFrame(step);
-      }
-    };
-
-    requestAnimationFrame(step);
-  });
-}
-
-function waitIfPaused() {
-  if (!isPaused) {
-    return Promise.resolve();
-  }
-
-  return new Promise((resolve) => {
-    const check = () => {
-      if (!isPaused) {
-        resolve();
-      } else {
-        requestAnimationFrame(check);
-      }
-    };
-
-    requestAnimationFrame(check);
-  });
-}
-
-function togglePause(
-  button,
-  body,
-  schedulerInstance = scheduler,
-  countdown = countdownState
-) {
-  isPaused = !isPaused;
-  button.setAttribute("aria-pressed", String(isPaused));
-  button.textContent = isPaused ? "Resume Timeline" : "Pause Timeline";
-  body.classList.toggle("paused", isPaused);
-
-  if (isPaused) {
-    schedulerInstance.pauseAll();
-    countdown.paused = true;
-  } else {
-    schedulerInstance.resumeAll();
-    countdown.paused = false;
-    if (countdown.active && countdown.rafId === null) {
-      countdown.rafId = requestAnimationFrame((timestamp) =>
-        updateCountdown(timestamp, countdown)
-      );
-    }
-  }
-}
-
-function startCountdown(overlay, state = countdownState, fuseEl) {
-  if (fuseEl) {
-    fuseEl.classList.add("ignited");
-  }
-
-  overlay.classList.add("visible");
-  state.active = true;
-  state.remainingMs = SELF_DESTRUCT_WARNING;
-  state.lastTimestamp = null;
-  state.paused = isPaused;
-  state.display.textContent = Math.ceil(state.remainingMs / 1000);
-
-  if (state.rafId !== null) {
-    cancelAnimationFrame(state.rafId);
-  }
-
-  state.rafId = requestAnimationFrame((timestamp) =>
-    updateCountdown(timestamp, state)
-  );
-}
-
-function updateCountdown(timestamp, state) {
-  if (!state.active) {
-    state.rafId = null;
-    return;
-  }
-
-  if (state.paused) {
-    state.lastTimestamp = timestamp;
-    state.rafId = requestAnimationFrame((next) => updateCountdown(next, state));
-    return;
-  }
-
-  if (state.lastTimestamp === null) {
-    state.lastTimestamp = timestamp;
-  }
-
-  const delta = timestamp - state.lastTimestamp;
-  state.lastTimestamp = timestamp;
-  state.remainingMs = Math.max(state.remainingMs - delta, 0);
-  state.display.textContent = Math.ceil(state.remainingMs / 1000);
-
-  if (state.remainingMs <= 0) {
-    state.display.textContent = "0";
-    state.active = false;
-    state.rafId = null;
-    return;
-  }
-
-  state.rafId = requestAnimationFrame((next) => updateCountdown(next, state));
-}
-
-function createCountdownStateSnapshot(display) {
-  return {
-    active: false,
-    remainingMs: SELF_DESTRUCT_WARNING,
-    rafId: null,
-    paused: false,
-    lastTimestamp: null,
-    display,
-  };
-}
-
-function createController(env = {}) {
-  const doc = env.document || document;
-  const perf = env.performance || performance;
-  const timers = env.timers || {};
-
-  const schedulerInstance = createScheduler({
-    setTimeout: timers.setTimeout,
-    clearTimeout: timers.clearTimeout,
-    now: typeof perf.now === "function" ? () => perf.now() : undefined,
-  });
-
-  const intro = doc.getElementById("intro");
-  const introText = intro ? intro.querySelector(".intro-text") : null;
-  const introSubtext = intro ? intro.querySelector(".intro-subtext") : null;
-  const terminalLog = intro ? intro.querySelector(".terminal-log") : null;
-  const selfDestructOverlay = doc.getElementById("self-destruct");
-  const countdownDisplay = selfDestructOverlay
-    ? selfDestructOverlay.querySelector(".self-destruct-countdown")
+  saveActiveTrip(updated);
+  updateDeltas();
+  setFormDisabled(true);
+  const expectedArrival = updated.expectedArrival
+    ? new Date(updated.expectedArrival)
     : null;
-  const dossier = doc.getElementById("dossier");
-  const fuse = doc.getElementById("fuse");
-  const pauseButton =
-    doc.getElementById("pause-toggle") || doc.getElementById("debug-pause");
-
-  const localCountdownState = createCountdownStateSnapshot(countdownDisplay);
-
-  const state = {
-    paused: false,
-    started: false,
-    completed: false,
-  };
-
-  const setFuseVariable = () => {
-    doc.documentElement.style.setProperty(
-      "--fuse-duration",
-      `${SELF_DESTRUCT_WARNING}ms`
-    );
-    doc.documentElement.style.setProperty("--scan-duration", `${SCAN_DURATION}ms`);
-  };
-
-  const confirmIntro = () => {
-    if (intro) {
-      intro.classList.add("confirmed");
-      intro.classList.remove("scanning");
-    }
-    if (introText) {
-      introText.textContent = "Identity Confirmed";
-    }
-    if (introSubtext) {
-      introSubtext.textContent = "Clearance matrix synchronized";
-    }
-  };
-
-  const unlockDossier = () => {
-    if (intro) {
-      intro.classList.add("intro-complete");
-    }
-    if (doc.body) {
-      doc.body.classList.add("show-dossier");
-    }
-    if (dossier) {
-      dossier.setAttribute("aria-hidden", "false");
-    }
-    if (pauseButton) {
-      pauseButton.disabled = false;
-      pauseButton.classList.add("active");
-      pauseButton.classList.remove("paused");
-      pauseButton.textContent = "Pause Autodestruct";
-    }
-    state.started = true;
-  };
-
-  const beginCountdown = () => {
-    if (fuse) {
-      fuse.classList.add("ignited");
-    }
-    if (selfDestructOverlay) {
-      selfDestructOverlay.classList.add("visible");
-    }
-    if (countdownDisplay) {
-      countdownDisplay.textContent = `${Math.ceil(
-        SELF_DESTRUCT_WARNING / 1000
-      )}`;
-    }
-    localCountdownState.active = false;
-    localCountdownState.paused = isPaused;
-  };
-
-  const triggerExplosion = () => {
-    if (doc.body) {
-      doc.body.classList.add("explode");
-      doc.body.classList.remove("paused");
-    }
-    if (pauseButton) {
-      pauseButton.disabled = true;
-      pauseButton.classList.remove("active");
-      pauseButton.textContent = "Autodestruct Complete";
-    }
-    state.completed = true;
-  };
-
-  const recoverAfterExplosion = () => {
-    if (doc.body) {
-      doc.body.classList.add("explosion-recovery");
-      doc.body.classList.remove("explode");
-    }
-
-    if (selfDestructOverlay) {
-      selfDestructOverlay.classList.remove("visible");
-    }
-
-    if (fuse) {
-      fuse.classList.remove("ignited");
-    }
-
-    schedulerInstance.schedule(
-      "recoverCleanup",
-      () => {
-        if (doc.body) {
-          doc.body.classList.remove("explosion-recovery");
-        }
-      },
-      900
-    );
-  };
-
-  const scheduleTimeline = () => {
-    schedulerInstance.schedule("introConfirm", confirmIntro, INTRO_CONFIRM_TIME);
-    schedulerInstance.schedule(
-      "introComplete",
-      unlockDossier,
-      INTRO_COMPLETE_TIME
-    );
-    schedulerInstance.schedule("countdown", beginCountdown, FUSE_DURATION);
-    schedulerInstance.schedule(
-      "explode",
-      triggerExplosion,
-      FUSE_DURATION + SELF_DESTRUCT_WARNING
-    );
-    schedulerInstance.schedule(
-      "recover",
-      recoverAfterExplosion,
-      FUSE_DURATION +
-        SELF_DESTRUCT_WARNING +
-        POST_EXPLOSION_TRANSMISSION_DELAY
-    );
-  };
-
-  const resetView = () => {
-    isPaused = false;
-    if (intro) {
-      intro.classList.remove("intro-complete", "confirmed", "scanning");
-    }
-    if (doc.body) {
-      doc.body.classList.remove(
-        "show-dossier",
-        "explode",
-        "paused",
-        "final-transmission",
-        "explosion-recovery"
-      );
-    }
-    if (fuse) {
-      fuse.classList.remove("ignited");
-    }
-    if (introText) {
-      introText.textContent = "Stabilizing subspace handshake...";
-    }
-    if (introSubtext) {
-      introSubtext.textContent = "Routing through secure relays";
-    }
-    if (terminalLog) {
-      terminalLog.textContent = "";
-    }
-    if (pauseButton) {
-      pauseButton.disabled = true;
-      pauseButton.classList.remove("active", "paused");
-      pauseButton.textContent = "Pause Autodestruct";
-      pauseButton.setAttribute("aria-pressed", "false");
-    }
-    if (selfDestructOverlay) {
-      selfDestructOverlay.classList.remove("visible");
-    }
-    localCountdownState.active = false;
-    localCountdownState.remainingMs = SELF_DESTRUCT_WARNING;
-    localCountdownState.paused = false;
-    localCountdownState.rafId = null;
-    localCountdownState.lastTimestamp = null;
-    if (countdownDisplay) {
-      countdownDisplay.textContent = `${Math.ceil(
-        SELF_DESTRUCT_WARNING / 1000
-      )}`;
-    }
-  };
-
-  return {
-    state,
-    start() {
-      resetView();
-      setFuseVariable();
-      scheduleTimeline();
-    },
-    pauseTimeline() {
-      if (state.paused || state.completed) {
-        return;
-      }
-      state.paused = true;
-      if (pauseButton) {
-        pauseButton.classList.add("paused");
-      }
-      togglePause(
-        pauseButton || doc.createElement("button"),
-        doc.body,
-        schedulerInstance,
-        localCountdownState
-      );
-      if (pauseButton) {
-        pauseButton.textContent = "Resume Autodestruct";
-      }
-    },
-    resumeTimeline() {
-      if (!state.paused || state.completed) {
-        return;
-      }
-      state.paused = false;
-      if (pauseButton) {
-        pauseButton.classList.remove("paused");
-      }
-      togglePause(
-        pauseButton || doc.createElement("button"),
-        doc.body,
-        schedulerInstance,
-        localCountdownState
-      );
-      if (pauseButton) {
-        pauseButton.textContent = "Pause Autodestruct";
-      }
-    },
-  };
+  scheduleArrivalReminder(expectedArrival);
 }
 
-const exportedConstants = {
-  INTRO_CONFIRM_TIME,
-  INTRO_COMPLETE_TIME,
-  FUSE_DURATION,
-  SELF_DESTRUCT_WARNING,
-  POST_EXPLOSION_TRANSMISSION_DELAY,
-};
+function handleArrivalNow() {
+  const baseTrip = activeTrip || buildTripBase();
+  if (!baseTrip) {
+    setReminderStatus("Pick a route before recording arrival.");
+    return;
+  }
+  const now = new Date();
+  const updated = {
+    ...baseTrip,
+    pickupActual: baseTrip.pickupActual || now.toISOString(),
+    arrivalActual: now.toISOString(),
+  };
+  saveActiveTrip(updated);
+  updateDeltas();
+  arrivalReminder.classList.remove("visible");
+  arrivalCapture.classList.remove("visible");
+  saveTripToHistory();
+}
+
+function handleArrivalYes() {
+  handleArrivalNow();
+}
+
+function handleArrivalNo() {
+  arrivalReminder.classList.remove("visible");
+  arrivalCapture.classList.add("visible");
+}
+
+function exportHistory() {
+  const history = loadHistory();
+  if (!history.length) return;
+  const headers = [
+    "Date",
+    "Day",
+    "Route",
+    "Expected Pickup",
+    "Actual Pickup",
+    "Pickup Delta (min)",
+    "Expected Arrival",
+    "Actual Arrival",
+    "Arrival Delta (min)",
+    "Notes",
+  ];
+
+  const rows = history.map((entry) => {
+    const expectedPickup = entry.expectedPickup
+      ? new Date(entry.expectedPickup)
+      : null;
+    const expectedArrival = entry.expectedArrival
+      ? new Date(entry.expectedArrival)
+      : null;
+    const pickupActual = entry.pickupActual
+      ? new Date(entry.pickupActual)
+      : null;
+    const arrivalActual = entry.arrivalActual
+      ? new Date(entry.arrivalActual)
+      : null;
+
+    const delta = (expected, actual) => {
+      if (!expected || !actual) return "";
+      return Math.round((actual - expected) / 60000);
+    };
+
+    return [
+      entry.date,
+      entry.day,
+      entry.route,
+      expectedPickup ? formatTime(expectedPickup) : "",
+      pickupActual ? formatTime(pickupActual) : "",
+      delta(expectedPickup, pickupActual),
+      expectedArrival ? formatTime(expectedArrival) : "",
+      arrivalActual ? formatTime(arrivalActual) : "",
+      delta(expectedArrival, arrivalActual),
+      entry.notes || "",
+    ];
+  });
+
+  const csv = [headers, ...rows]
+    .map((row) =>
+      row
+        .map((cell) =>
+          `"${String(cell).replace(/"/g, '""')}"`
+        )
+        .join(",")
+    )
+    .join("\n");
+
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  const prefix = currentMode === MODES.test ? "commute-history-test" : "commute-history";
+  link.download = `${prefix}-${Date.now()}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function clearHistory() {
+  localStorage.removeItem(getStorageKey(STORAGE_KEY));
+  renderHistory();
+}
+
+function applyMode(mode) {
+  currentMode = normalizeMode(mode);
+  if (typeof localStorage !== "undefined") {
+    localStorage.setItem(MODE_KEY, currentMode);
+  }
+  setModeUI(currentMode);
+  resetCheckinUI();
+  activeTrip = loadActiveTrip();
+  renderHistory();
+
+  if (activeTrip) {
+    if (activeTrip.date) {
+      tripDate.value = activeTrip.date;
+    }
+    if (activeTrip.day) {
+      tripDay.value = activeTrip.day;
+    }
+    if (activeTrip.route) {
+      routeSelect.value = activeTrip.route;
+    }
+    tripNotes.value = activeTrip.notes || "";
+    updateExpectedTimes();
+    updateDeltas();
+    setFormDisabled(true);
+    const expectedArrival = activeTrip.expectedArrival
+      ? new Date(activeTrip.expectedArrival)
+      : null;
+    scheduleArrivalReminder(expectedArrival);
+  } else {
+    setFormDisabled(false);
+    tripNotes.value = "";
+    setTodayDate();
+    routeSelect.value = "";
+    updateExpectedTimes();
+  }
+}
+
+function initialize() {
+  setTodayDate();
+  populateRoutes();
+  updateExpectedTimes();
+  renderHistory();
+  renderSchedule("Tuesday");
+  setModeUI(currentMode);
+
+  if (activeTrip) {
+    if (activeTrip.date) {
+      tripDate.value = activeTrip.date;
+    }
+    if (activeTrip.day) {
+      tripDay.value = activeTrip.day;
+    }
+    if (activeTrip.route) {
+      routeSelect.value = activeTrip.route;
+    }
+    if (activeTrip.notes) {
+      tripNotes.value = activeTrip.notes;
+    }
+    updateExpectedTimes();
+    updateDeltas();
+    setFormDisabled(true);
+    const expectedArrival = activeTrip.expectedArrival
+      ? new Date(activeTrip.expectedArrival)
+      : null;
+    scheduleArrivalReminder(expectedArrival);
+  }
+
+  routeSelect.addEventListener("change", () => {
+    updateExpectedTimes();
+    resetCheckinUI();
+    saveActiveTrip(null);
+    setFormDisabled(false);
+  });
+
+  document.querySelectorAll(".tab").forEach((tab) => {
+    tab.addEventListener("click", () => {
+      const day = tab.dataset.day;
+      updateTabs(day);
+      renderSchedule(day);
+    });
+  });
+
+  pickupNowBtn.addEventListener("click", handlePickupNow);
+  arrivalNowBtn.addEventListener("click", handleArrivalNow);
+  arrivalYesBtn.addEventListener("click", handleArrivalYes);
+  arrivalNoBtn.addEventListener("click", handleArrivalNo);
+  arrivalCaptureBtn.addEventListener("click", handleArrivalNow);
+  exportButton.addEventListener("click", exportHistory);
+  clearButton.addEventListener("click", clearHistory);
+  if (modeToggle) {
+    modeToggle.addEventListener("change", (event) => {
+      const nextMode = event.target.checked ? MODES.test : MODES.live;
+      applyMode(nextMode);
+    });
+  }
+}
+
+if (typeof document !== "undefined" && routeSelect) {
+  initialize();
+}
 
 if (typeof module !== "undefined" && module.exports) {
   module.exports = {
-    createController,
-    createScheduler,
-    constants: exportedConstants,
-    initializeGeolocation,
-    formatCoordinates,
-    locationMessages: DEFAULT_LOCATION_MESSAGES,
-    locationState: LOCATION_STATE,
+    formatDelta,
+    formatDuration,
+    normalizeMode,
+    getStorageKey,
   };
 }
